@@ -140,8 +140,30 @@ install_or_refresh_nginx() {
   sudo systemctl reload nginx
 }
 
+wait_for_backend() {
+  local attempts="${1:-10}"
+  local delay_seconds="${2:-2}"
+  local index=1
+
+  while [[ "${index}" -le "${attempts}" ]]; do
+    if curl -fsS http://127.0.0.1:3001/api/health >/dev/null 2>&1; then
+      return 0
+    fi
+
+    sleep "${delay_seconds}"
+    index=$((index + 1))
+  done
+
+  return 1
+}
+
 run_health_checks() {
   echo_step "running health checks"
+  if ! wait_for_backend 10 2; then
+    echo "[agent-home] backend health check did not recover in time" >&2
+    return 1
+  fi
+
   curl http://127.0.0.1:3001/api/health
   echo
   curl -I "http://${SERVER_IP}"
