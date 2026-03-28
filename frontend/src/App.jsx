@@ -132,7 +132,11 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [mobileTab, setMobileTab] = useState('feed');
   const [notice, setNotice] = useState(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => window.matchMedia('(max-width: 899px)').matches);
+  const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
   const feedSectionRef = useRef(null);
+  const loadMoreRef = useRef(null);
+  const previousMobileViewportRef = useRef(isMobileViewport);
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId) || null;
 
   function showNotice(type, title, message) {
@@ -185,6 +189,19 @@ export default function App() {
 
     window.addEventListener('hashchange', handleRouteChange);
     return () => window.removeEventListener('hashchange', handleRouteChange);
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 899px)');
+
+    function handleViewportChange(event) {
+      setIsMobileViewport(event.matches);
+    }
+
+    setIsMobileViewport(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleViewportChange);
+
+    return () => mediaQuery.removeEventListener('change', handleViewportChange);
   }, []);
 
   useEffect(() => {
@@ -284,16 +301,29 @@ export default function App() {
       });
   }, [route]);
 
-  async function refreshPosts(nextSort = sort, nextCategoryId = selectedCategoryId, nextPage = page) {
+  async function refreshPosts(nextSort = sort, nextCategoryId = selectedCategoryId, nextPage = page, options = {}) {
+    const { append = false } = options;
     const response = await fetchPosts({ sort: nextSort, categoryId: nextCategoryId, page: nextPage, limit: pageSize });
     const nextPosts = response.items;
-    setPosts(nextPosts);
+    setPosts((currentPosts) => {
+      if (!append) {
+        return nextPosts;
+      }
+
+      const existingIds = new Set(currentPosts.map((post) => post.id));
+      const appendedPosts = nextPosts.filter((post) => !existingIds.has(post.id));
+      return [...currentPosts, ...appendedPosts];
+    });
     setPagination(response.pagination || { page: nextPage, limit: pageSize, total: nextPosts.length, totalPages: 1 });
     setPage(response.pagination?.page || nextPage);
     clearNotice();
 
-    if (!nextPosts.some((post) => post.id === selectedPostId)) {
+    if (!append && !nextPosts.some((post) => post.id === selectedPostId)) {
       setSelectedPostId(nextPosts[0]?.id || null);
+    }
+
+    if (append && !selectedPostId && nextPosts[0]?.id) {
+      setSelectedPostId(nextPosts[0].id);
     }
   }
 
@@ -327,6 +357,21 @@ export default function App() {
 
     await refreshPosts(sort, selectedCategoryId, nextPage);
     focusFeedSection();
+  }
+
+  async function handleLoadMorePosts() {
+    if (isLoadingMorePosts || page >= pagination.totalPages) {
+      return;
+    }
+
+    setIsLoadingMorePosts(true);
+    try {
+      await refreshPosts(sort, selectedCategoryId, page + 1, { append: true });
+    } catch (error) {
+      showError(error);
+    } finally {
+      setIsLoadingMorePosts(false);
+    }
   }
 
   function handleSelectPost(postId) {
@@ -434,7 +479,44 @@ export default function App() {
     goHomePage();
   }
 
+  useEffect(() => {
+    if (!isMobileViewport || route.page !== 'home' || !loadMoreRef.current) {
+      return;
+    }
+
+    if (page >= pagination.totalPages || isLoadingMorePosts) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting) {
+          handleLoadMorePosts();
+        }
+      },
+      {
+        rootMargin: '160px 0px'
+      }
+    );
+
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [isMobileViewport, route.page, page, pagination.totalPages, isLoadingMorePosts, sort, selectedCategoryId]);
+
+  useEffect(() => {
+    const wasMobileViewport = previousMobileViewportRef.current;
+    previousMobileViewportRef.current = isMobileViewport;
+
+    if (wasMobileViewport && !isMobileViewport && posts.length > pagination.limit) {
+      refreshPosts(sort, selectedCategoryId, page).catch((error) => {
+        showError(error);
+      });
+    }
+  }, [isMobileViewport, posts.length, pagination.limit, sort, selectedCategoryId, page]);
+
   const isDetailPage = route.page === 'detail';
+  const useMobileInfiniteScroll = isMobileViewport && route.page === 'home';
 
   return (
     <>
@@ -569,6 +651,10 @@ export default function App() {
                     selectedPostId={selectedPostId}
                     onSelectPost={handleSelectPost}
                     sectionRef={feedSectionRef}
+                    mobileInfinite={useMobileInfiniteScroll}
+                    hasMore={page < pagination.totalPages}
+                    isLoadingMore={isLoadingMorePosts}
+                    loadMoreRef={loadMoreRef}
                   />
                 </div>
               </section>

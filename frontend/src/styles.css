@@ -1064,6 +1064,16 @@ textarea {
   font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
 }
 
+.mobile-feed-loader {
+  display: grid;
+  place-items: center;
+  min-height: 56px;
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(119, 247, 255, 0.08);
+  text-align: center;
+}
+
 .inline-pills {
   display: flex;
   gap: 8px;
@@ -1575,6 +1585,12 @@ textarea {
 
   .pagination-actions {
     width: 100%;
+  }
+
+  .mobile-feed-loader {
+    min-height: 50px;
+    margin-top: 8px;
+    padding-top: 12px;
   }
 
   .post-meta,

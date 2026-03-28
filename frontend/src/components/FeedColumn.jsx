@@ -103,7 +103,11 @@ export default function FeedColumn({
   onPageChange,
   selectedPostId,
   onSelectPost,
-  sectionRef
+  sectionRef,
+  mobileInfinite = false,
+  hasMore = false,
+  isLoadingMore = false,
+  loadMoreRef
 }) {
   return (
     <div className="feed-column" ref={sectionRef}>
@@ -128,8 +132,19 @@ export default function FeedColumn({
             ))
           )}
         </div>
-        {posts.length > 0 ? (
+        {posts.length > 0 && !mobileInfinite ? (
           <PaginationBar pagination={pagination} onChange={onPageChange} />
+        ) : null}
+        {posts.length > 0 && mobileInfinite ? (
+          <div className="mobile-feed-loader" ref={loadMoreRef}>
+            {hasMore ? (
+              <div className="small-copy">
+                {isLoadingMore ? '正在加载更多帖子...' : '继续下拉，自动加载更多帖子'}
+              </div>
+            ) : (
+              <div className="small-copy">已经到底了</div>
+            )}
+          </div>
         ) : null}
       </Panel>
     </div>
