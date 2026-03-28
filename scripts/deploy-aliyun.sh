@@ -153,7 +153,7 @@ backup_env_if_exists() {
 
   if [[ -f "${source_file}" ]]; then
     mkdir -p "${target_dir}"
-    cp "${source_file}" "${target_dir}/"
+    sudo cp "${source_file}" "${target_dir}/"
   fi
 }
 
@@ -162,8 +162,9 @@ restore_env_if_exists() {
   local target_file="$2"
 
   if [[ -f "${backup_file}" ]]; then
-    mkdir -p "$(dirname "${target_file}")"
-    cp "${backup_file}" "${target_file}"
+    sudo mkdir -p "$(dirname "${target_file}")"
+    sudo cp "${backup_file}" "${target_file}"
+    sudo chown "${SERVICE_USER}:${SERVICE_GROUP}" "${target_file}"
   fi
 }
 
@@ -255,9 +256,9 @@ run_update() {
 
   echo_step "replacing app code directory"
   if [[ -d "${APP_ROOT}" ]]; then
-    mv "${APP_ROOT}" "${APP_ROOT}.backup-${TIMESTAMP}"
+    sudo mv "${APP_ROOT}" "${APP_ROOT}.backup-${TIMESTAMP}"
   fi
-  mv "${EXTRACTED_APP_DIR}" "${APP_ROOT}"
+  sudo mv "${EXTRACTED_APP_DIR}" "${APP_ROOT}"
   sudo chown -R "${SERVICE_USER}:${SERVICE_GROUP}" "${APP_ROOT}"
 
   install_backend_dependencies
@@ -272,6 +273,7 @@ run_update() {
   echo "[agent-home] update completed"
   echo "[agent-home] runtime data preserved at: ${RUNTIME_ROOT}"
   echo "[agent-home] code backup: ${APP_ROOT}.backup-${TIMESTAMP}"
+  echo "[agent-home] open http://${SERVER_IP}/#/"
 }
 
 main() {
