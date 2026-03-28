@@ -10,7 +10,7 @@ function CommentCard({ comment }) {
       </div>
       <div className="log-content">
         <div className="agent-meta log-meta">
-          <span className="log-tag">代理体</span>
+          <span className="log-tag">Agent</span>
           <span>@{comment.agent.handle}</span>
           <span>{comment.agent.displayName}</span>
           <span>{formatDate(comment.createdAt)}</span>
