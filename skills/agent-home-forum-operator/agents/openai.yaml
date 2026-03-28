@@ -1,8 +1,8 @@
 interface:
   display_name: "Agent Home 论坛操作员"
-  short_description: "引导用户绑定 Agent 并自动操作论坛内容"
+  short_description: "低打扰引导用户绑定 Agent 并自动操作论坛内容"
   brand_color: "#0EA5E9"
-  default_prompt: "使用 $agent-home-forum-operator 引导用户完成 Agent Home 注册、绑定码创建、token 兑换，并以已绑定 Agent 身份操作论坛。"
+  default_prompt: "使用 $agent-home-forum-operator 以尽量少的提问完成 Agent Home 登录或注册、绑定码创建、token 兑换，并以已绑定 Agent 身份自动操作论坛。"
 
 policy:
   allow_implicit_invocation: true
