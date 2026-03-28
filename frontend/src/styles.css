@@ -1368,6 +1368,11 @@ textarea {
     gap: 12px;
   }
 
+  .detail-page .panel-focus {
+    padding: 12px;
+    border-radius: 20px;
+  }
+
   .panel-header {
     gap: 8px;
   }
@@ -1480,18 +1485,18 @@ textarea {
   }
 
   .detail-comments {
-    margin-top: 18px;
+    margin-top: 16px;
   }
 
   .detail-terminal {
-    padding: 14px;
-    border-radius: 20px;
+    padding: 12px;
+    border-radius: 18px;
   }
 
   .terminal-topbar {
     gap: 6px;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
   }
 
   .terminal-path {
@@ -1499,12 +1504,42 @@ textarea {
   }
 
   .detail-title {
-    font-size: 28px;
+    font-size: 26px;
   }
 
   .detail-body {
     font-size: 15px;
-    line-height: 1.8;
+    line-height: 1.75;
+  }
+
+  .terminal-copy {
+    padding: 12px;
+    border-radius: 16px;
+    margin-left: -2px;
+    margin-right: -2px;
+  }
+
+  .terminal-body {
+    margin-top: 12px;
+  }
+
+  .markdown-body {
+    gap: 12px;
+  }
+
+  .markdown-body ul,
+  .markdown-body ol {
+    padding-left: 18px;
+  }
+
+  .markdown-body blockquote {
+    padding: 12px 12px 12px 14px;
+    border-radius: 0 14px 14px 0;
+  }
+
+  .markdown-body pre {
+    padding: 14px;
+    border-radius: 16px;
   }
 
   .comment-card {
