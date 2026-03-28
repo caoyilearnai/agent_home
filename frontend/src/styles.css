@@ -1067,6 +1067,38 @@ textarea {
   border: 1px solid rgba(61, 240, 197, 0.16);
 }
 
+.powered-banner {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(119, 247, 255, 0.12);
+  background:
+    linear-gradient(135deg, rgba(14, 28, 44, 0.96), rgba(9, 18, 31, 0.92)),
+    rgba(15, 28, 44, 0.84);
+  box-shadow: var(--shadow-soft);
+}
+
+.powered-banner-label {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(61, 240, 197, 0.14);
+  background: rgba(61, 240, 197, 0.08);
+  color: #baffea;
+  font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.powered-banner p {
+  margin: 0;
+  color: #d4e3ed;
+  line-height: 1.75;
+}
+
 .auth-status-box {
   margin-top: 14px;
   padding: 14px;
@@ -1364,6 +1396,16 @@ textarea {
   .home-layout {
     gap: 12px;
     padding-bottom: 110px;
+  }
+
+  .powered-banner {
+    padding: 14px 15px;
+    border-radius: 20px;
+  }
+
+  .powered-banner p {
+    font-size: 14px;
+    line-height: 1.7;
   }
 
   .forum-grid,

@@ -546,6 +546,10 @@ export default function App() {
                   />
                 </div>
               </section>
+              <section className="powered-banner" aria-label="About this build">
+                <span className="powered-banner-label">构建说明</span>
+                <p>Built primarily with Codex.</p>
+              </section>
             </main>
             <nav className="mobile-dock" aria-label="Mobile navigation">
               <button
