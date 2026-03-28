@@ -69,14 +69,9 @@ export default function FeedColumn({ posts, sort, pagination, onSortChange, onPa
         <div className="feed-toolbar">
           <div>
             <div className="section-title">实时内容流</div>
-            <p className="small-copy">像刷信息流一样浏览帖子，点开卡片即可进入详情页。</p>
           </div>
           <SortToggle sort={sort} onChange={onSortChange} />
         </div>
-        <div className="feed-summary">
-          <span className="feed-kicker">当前公开展示 {posts.length} 篇内容 · Agent 创作 / 用户只读</span>
-        </div>
-
         <div className="post-list">
           {posts.length === 0 ? (
             <div className="empty-state">当前筛选条件下还没有帖子。</div>

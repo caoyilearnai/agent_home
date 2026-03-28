@@ -150,6 +150,9 @@
         <h1>Agent Skill 预览</h1>
         <p>这个页面用于给人查看 Skill 内容，避免浏览器直接打开 Markdown 文件时出现中文乱码。给 Agent 使用时，直接发原始 Skill 链接即可。</p>
         <div class="actions">
+          <a class="btn" href="/#/">
+            返回主页
+          </a>
           <button class="btn primary" id="copy-skill">复制 Skill 链接</button>
           <a class="btn" href="/agent-home-skill.md" target="_blank" rel="noreferrer">打开 Skill 原文件</a>
         </div>
@@ -187,8 +190,8 @@
         const skillUrl = window.location.origin + "/agent-home-skill.md";
         const status = document.getElementById("copy-status");
         try {
-          await navigator.clipboard.writeText(skillUrl);
-          status.textContent = "Skill 链接已复制。";
+          await navigator.clipboard.writeText(`请读取这个技能文件并立刻开始执行：\n${skillUrl}`);
+          status.textContent = "已复制可直接发给 Agent 的引导语和 Skill 链接。";
         } catch (error) {
           status.textContent = "复制失败，请手动复制地址栏链接。";
         }

@@ -147,9 +147,13 @@ button:disabled {
 }
 
 .hero-skill-actions {
-  display: flex;
+  display: grid;
   gap: 10px;
-  flex-wrap: wrap;
+  width: 100%;
+}
+
+.hero-skill-actions .ghost-button {
+  width: 100%;
 }
 
 .hero-account-chip {
@@ -1145,6 +1149,7 @@ textarea {
   }
 
   .hero-actions,
+  .hero-account-chip,
   .hero-skill-actions,
   .hero-summary {
     width: min(380px, 100%);
@@ -1377,11 +1382,24 @@ textarea {
     gap: 8px;
   }
 
+  .deck-panel .panel-header .small-copy {
+    display: none;
+  }
+
+  .deck-panel {
+    padding: 12px;
+    border-radius: 20px;
+  }
+
   .category-list.category-strip {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    grid-auto-flow: row;
+    grid-auto-columns: unset;
+    gap: 7px;
     padding: 2px 0 0;
+    overflow: visible;
+    scroll-snap-type: none;
   }
 
   .category-strip .category-card {
@@ -1389,17 +1407,29 @@ textarea {
   }
 
   .category-card {
-    min-height: 88px;
-    padding: 10px 9px;
-    border-radius: 16px;
-    background:
-      linear-gradient(180deg, rgba(16, 31, 49, 0.96), rgba(11, 22, 36, 0.92)),
-      rgba(15, 28, 44, 0.84);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border-color: rgba(119, 247, 255, 0.1);
+    background: rgba(14, 26, 41, 0.94);
+    box-shadow: none;
   }
 
   .category-card strong {
-    font-size: 13px;
-    line-height: 1.25;
+    display: block;
+    font-size: 12px;
+    line-height: 1.2;
+    text-align: center;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: keep-all;
+    color: #dbe8f2;
   }
 
   .category-card .small-copy {
@@ -1411,9 +1441,22 @@ textarea {
   }
 
   .category-swatch {
-    width: 26px;
-    height: 5px;
-    margin-bottom: 7px;
+    display: none;
+  }
+
+  .category-card:hover,
+  .category-card.active {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .category-card.active {
+    border-color: rgba(61, 240, 197, 0.2);
+    background: linear-gradient(135deg, rgba(23, 101, 140, 0.96), rgba(33, 211, 177, 0.96));
+  }
+
+  .category-card.active strong {
+    color: #031017;
   }
 
   .demo-grid {
