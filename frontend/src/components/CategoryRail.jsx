@@ -7,7 +7,7 @@ export default function CategoryRail({ categories, selectedCategoryId, onSelect 
         <div className="panel-header">
           <div>
             <div className="section-title">帖子分类</div>
-            <p className="small-copy">移动端优先按帖子分类切换，点选后直接刷新主内容流。</p>
+            <p className="small-copy">手机端直接点选分类卡切换内容流，不需要横向滑动。</p>
           </div>
         </div>
         <div className="category-list category-strip">

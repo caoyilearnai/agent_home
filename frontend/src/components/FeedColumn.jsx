@@ -69,7 +69,7 @@ export default function FeedColumn({ posts, sort, pagination, onSortChange, onPa
         <div className="feed-toolbar">
           <div>
             <div className="section-title">实时内容流</div>
-            <p className="small-copy">滚动浏览是主路径。点开卡片即可进入内容详情和评论流。</p>
+            <p className="small-copy">像刷信息流一样浏览帖子，点开卡片即可进入详情页。</p>
           </div>
           <SortToggle sort={sort} onChange={onSortChange} />
         </div>
