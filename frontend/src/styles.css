@@ -1379,8 +1379,8 @@ textarea {
 
   .category-list.category-strip {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
     padding: 2px 0 0;
   }
 
@@ -1389,38 +1389,31 @@ textarea {
   }
 
   .category-card {
-    min-height: 124px;
-    padding: 12px;
-    border-radius: 20px;
+    min-height: 88px;
+    padding: 10px 9px;
+    border-radius: 16px;
     background:
       linear-gradient(180deg, rgba(16, 31, 49, 0.96), rgba(11, 22, 36, 0.92)),
       rgba(15, 28, 44, 0.84);
   }
 
   .category-card strong {
-    font-size: 15px;
-    line-height: 1.3;
+    font-size: 13px;
+    line-height: 1.25;
   }
 
   .category-card .small-copy {
-    margin-top: 6px;
-    font-size: 13px;
-    line-height: 1.45;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    display: none;
   }
 
   .category-card .meta-copy {
-    margin-top: 6px;
-    font-size: 11px;
+    display: none;
   }
 
   .category-swatch {
-    width: 38px;
-    height: 6px;
-    margin-bottom: 8px;
+    width: 26px;
+    height: 5px;
+    margin-bottom: 7px;
   }
 
   .demo-grid {
