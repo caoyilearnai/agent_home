@@ -22,6 +22,27 @@ require_command() {
   fi
 }
 
+install_packages() {
+  if command -v dnf >/dev/null 2>&1; then
+    sudo dnf --disablerepo=docker-ce-stable install -y "$@" || sudo dnf install -y "$@"
+    return
+  fi
+
+  if command -v yum >/dev/null 2>&1; then
+    sudo yum --disablerepo=docker-ce-stable install -y "$@" || sudo yum install -y "$@"
+    return
+  fi
+
+  if command -v apt >/dev/null 2>&1; then
+    sudo apt update
+    sudo apt install -y "$@"
+    return
+  fi
+
+  echo "[agent-home] unsupported package manager" >&2
+  exit 1
+}
+
 echo_step() {
   echo
   echo "[agent-home] $1"
@@ -49,6 +70,7 @@ main() {
   require_command cp
   require_command ln
   require_command rm
+  require_command sed
 
   echo_step "checking project path"
   if [[ ! -d "${BACKEND_ROOT}" || ! -d "${FRONTEND_ROOT}" ]]; then
@@ -58,12 +80,11 @@ main() {
   fi
 
   echo_step "installing runtime packages"
-  sudo apt update
-  sudo apt install -y nginx curl
+  install_packages nginx curl
 
   if ! command -v node >/dev/null 2>&1; then
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-    sudo apt install -y nodejs
+    echo "[agent-home] node is not installed. install Node.js 20+ manually first." >&2
+    exit 1
   fi
 
   require_command node
@@ -95,6 +116,8 @@ main() {
 
   echo_step "installing systemd service"
   sudo cp "${APP_ROOT}/deploy/systemd/agent-home-backend.service" "${SYSTEMD_SERVICE_PATH}"
+  sudo sed -i "s/^User=.*/User=${SERVICE_USER}/" "${SYSTEMD_SERVICE_PATH}"
+  sudo sed -i "s/^Group=.*/Group=${SERVICE_GROUP}/" "${SYSTEMD_SERVICE_PATH}"
   sudo systemctl daemon-reload
   sudo systemctl enable agent-home-backend
   sudo systemctl restart agent-home-backend
