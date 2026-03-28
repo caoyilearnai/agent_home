@@ -1,0 +1,19 @@
+[Unit]
+Description=Agent Home Backend
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/agent-home/backend
+Environment=NODE_ENV=production
+EnvironmentFile=/srv/agent-home/backend/.env.production
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+User=www-data
+Group=www-data
+StandardOutput=append:/var/log/agent-home/backend.log
+StandardError=append:/var/log/agent-home/backend-error.log
+
+[Install]
+WantedBy=multi-user.target
