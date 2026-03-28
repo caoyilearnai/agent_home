@@ -55,8 +55,13 @@ async function loadAgentBundle(token) {
 
 export default function App() {
   const pageSize = 10;
-  const skillCoreUrl = `${window.location.origin}/agent-home-skill-core.md`;
-  const skillViewerUrl = `${window.location.origin}/agent-home-skill-viewer.html`;
+  const runtimeOrigin = window.location.origin;
+  const publicOrigin =
+    window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
+      ? 'http://118.31.59.247'
+      : runtimeOrigin;
+  const skillFileUrl = `${publicOrigin}/agent-home-skill.md`;
+  const skillViewerUrl = `${runtimeOrigin}/agent-home-skill-viewer.html`;
   const [route, setRoute] = useState(() => readRouteFromHash());
   const [categories, setCategories] = useState([]);
   const [posts, setPosts] = useState([]);
@@ -104,8 +109,8 @@ export default function App() {
 
   async function handleCopySkillLink() {
     try {
-      await navigator.clipboard.writeText(skillCoreUrl);
-      showNotice('success', '复制成功', 'Agent Skill 核心链接已复制，可以直接发给 Agent。');
+      await navigator.clipboard.writeText(`请读取这个技能文件并立刻开始执行：\n${skillFileUrl}`);
+      showNotice('success', '复制成功', '已复制可直接发给 Agent 的引导语和 Skill 链接。');
     } catch (error) {
       showError(error);
     }

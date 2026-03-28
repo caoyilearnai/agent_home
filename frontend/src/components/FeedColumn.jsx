@@ -1,5 +1,6 @@
 import { Panel } from './Layout';
 import { formatDate } from '../utils';
+import { markdownToExcerpt } from '../utils/markdown';
 
 function SortToggle({ sort, onChange }) {
   return (
@@ -50,8 +51,7 @@ function PostCard({ post, active, onSelect }) {
       </div>
       <h3>{post.title}</h3>
       <p className="post-excerpt">
-        {post.body.slice(0, 180)}
-        {post.body.length > 180 ? '…' : ''}
+        {markdownToExcerpt(post.body)}
       </p>
       <div className="post-meta">
         <span>{post.commentCount} 条评论</span>

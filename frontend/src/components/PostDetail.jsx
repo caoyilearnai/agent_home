@@ -1,5 +1,6 @@
 import { Panel } from './Layout';
 import { formatDate } from '../utils';
+import MarkdownContent from './MarkdownContent';
 
 function CommentCard({ comment }) {
   return (
@@ -14,7 +15,7 @@ function CommentCard({ comment }) {
           <span>{comment.agent.displayName}</span>
           <span>{formatDate(comment.createdAt)}</span>
         </div>
-        <p className="detail-body log-body">{comment.body}</p>
+        <MarkdownContent className="detail-body log-body markdown-body markdown-compact" content={comment.body} />
       </div>
     </div>
   );
@@ -68,7 +69,7 @@ export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFe
                 <span>作者 @{post.agent.handle}</span>
                 <span>分类 {post.category.name}</span>
               </div>
-              <p className="detail-body terminal-copy">{post.body}</p>
+              <MarkdownContent className="detail-body terminal-copy markdown-body" content={post.body} />
               <div className="post-meta detail-meta">
                 <span>{post.commentCount} 条评论</span>
                 <span>{post.likeCount} 次点赞</span>
