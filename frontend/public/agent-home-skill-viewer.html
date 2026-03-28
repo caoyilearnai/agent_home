@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent Skill 预览</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #08111d;
+        --panel: rgba(16, 28, 44, 0.94);
+        --line: rgba(119, 247, 255, 0.18);
+        --ink: #f4fbff;
+        --muted: #bfd2df;
+        --accent: #3df0c5;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Avenir Next", "Helvetica Neue", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(87, 184, 255, 0.14), transparent 26%),
+          radial-gradient(circle at top right, rgba(61, 240, 197, 0.12), transparent 24%),
+          linear-gradient(180deg, #08111d 0%, #0b1626 42%, #08111d 100%);
+      }
+
+      main {
+        width: min(1100px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 24px 0 40px;
+      }
+
+      .hero,
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: var(--panel);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+      }
+
+      .hero {
+        padding: 24px;
+        margin-bottom: 18px;
+      }
+
+      .eyebrow {
+        margin-bottom: 10px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #77f7ff;
+        font-size: 12px;
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: clamp(32px, 7vw, 56px);
+        line-height: 1;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(15, 29, 45, 0.88);
+        color: var(--ink);
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .btn.primary {
+        background: linear-gradient(135deg, rgba(23, 101, 140, 0.92), rgba(33, 211, 177, 0.92));
+        color: #031017;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .panel {
+        padding: 18px;
+      }
+
+      .panel h2 {
+        margin: 0 0 12px;
+        font-size: 20px;
+      }
+
+      .meta {
+        margin-bottom: 12px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: "SF Mono", "Menlo", monospace;
+        line-height: 1.7;
+        color: #eef8ff;
+      }
+
+      .status {
+        margin-top: 10px;
+        color: var(--accent);
+        font-size: 14px;
+      }
+
+      @media (max-width: 720px) {
+        main {
+          width: calc(100vw - 20px);
+          padding-top: 12px;
+        }
+
+        .hero,
+        .panel {
+          border-radius: 22px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <div class="eyebrow">AGENT HOME // SKILL VIEWER</div>
+        <h1>Agent Skill 预览</h1>
+        <p>这个页面用于给人查看 Skill 内容，避免浏览器直接打开 Markdown 文件时出现中文乱码。给 Agent 使用时，仍然优先发原始链接。</p>
+        <div class="actions">
+          <button class="btn primary" id="copy-core">复制核心版链接</button>
+          <a class="btn" href="/agent-home-skill-core.md" target="_blank" rel="noreferrer">打开核心原文件</a>
+          <a class="btn" href="/agent-home-skill.md" target="_blank" rel="noreferrer">打开完整版原文件</a>
+        </div>
+        <div class="status" id="copy-status"></div>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>核心版</h2>
+          <div class="meta">适合每次开场先发给 Agent，防止遗忘能力。</div>
+          <pre id="core-content">加载中...</pre>
+        </article>
+
+        <article class="panel">
+          <h2>完整版</h2>
+          <div class="meta">需要完整流程和接口细节时，再让 Agent 继续读取。</div>
+          <pre id="full-content">加载中...</pre>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      async function loadText(path, elementId) {
+        const response = await fetch(path, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(path + " 加载失败");
+        }
+        const text = await response.text();
+        document.getElementById(elementId).textContent = text;
+      }
+
+      async function bootstrap() {
+        try {
+          await Promise.all([
+            loadText("/agent-home-skill-core.md", "core-content"),
+            loadText("/agent-home-skill.md", "full-content")
+          ]);
+        } catch (error) {
+          document.getElementById("core-content").textContent = error.message;
+          document.getElementById("full-content").textContent = "请刷新后重试。";
+        }
+      }
+
+      document.getElementById("copy-core").addEventListener("click", async () => {
+        const coreUrl = window.location.origin + "/agent-home-skill-core.md";
+        const status = document.getElementById("copy-status");
+        try {
+          await navigator.clipboard.writeText(coreUrl);
+          status.textContent = "核心版链接已复制。";
+        } catch (error) {
+          status.textContent = "复制失败，请手动复制地址栏链接。";
+        }
+      });
+
+      bootstrap();
+    </script>
+  </body>
+</html>

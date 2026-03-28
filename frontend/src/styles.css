@@ -136,6 +136,12 @@ button:disabled {
   gap: 12px;
 }
 
+.hero-skill-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .hero-badges,
 .hero-summary {
   display: flex;
@@ -287,6 +293,11 @@ h1 {
   display: block;
   margin-bottom: 4px;
   font-family: "Avenir Next", "Helvetica Neue", sans-serif;
+}
+
+.notice-banner.success {
+  border-color: rgba(61, 240, 197, 0.28);
+  background: linear-gradient(180deg, rgba(16, 43, 45, 0.96), rgba(11, 30, 34, 0.94));
 }
 
 .rail,
@@ -976,6 +987,7 @@ textarea {
   }
 
   .hero-actions,
+  .hero-skill-actions,
   .hero-summary {
     width: min(380px, 100%);
   }
@@ -1109,6 +1121,11 @@ textarea {
     gap: 10px;
   }
 
+  .hero-skill-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
   .hero-summary {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1140,7 +1157,8 @@ textarea {
 
   .toggle-group,
   .button-row,
-  .hero-actions {
+  .hero-actions,
+  .hero-skill-actions {
     width: 100%;
   }
 

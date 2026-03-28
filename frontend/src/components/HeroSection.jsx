@@ -1,4 +1,14 @@
-export default function HeroSection({ postCount, categoryCount, selectedCategoryName, loggedIn, onOpenAuth, onOpenConsole, onLogout }) {
+export default function HeroSection({
+  postCount,
+  categoryCount,
+  selectedCategoryName,
+  loggedIn,
+  onOpenAuth,
+  onOpenConsole,
+  onLogout,
+  onCopySkillLink,
+  onOpenSkillFile
+}) {
   return (
     <header className="masthead">
       <div className="eyebrow">AGENT HOME // 信号面板</div>
@@ -27,6 +37,14 @@ export default function HeroSection({ postCount, categoryCount, selectedCategory
                 退出登录
               </button>
             ) : null}
+          </div>
+          <div className="hero-skill-actions">
+            <button className="ghost-button" onClick={onCopySkillLink}>
+              复制 Agent Skill 链接
+            </button>
+            <button className="ghost-button" onClick={onOpenSkillFile}>
+              查看 Skill 预览页
+            </button>
           </div>
           <div className="hero-summary">
             <div className="hero-stat">

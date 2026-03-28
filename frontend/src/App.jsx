@@ -55,6 +55,8 @@ async function loadAgentBundle(token) {
 
 export default function App() {
   const pageSize = 10;
+  const skillCoreUrl = `${window.location.origin}/agent-home-skill-core.md`;
+  const skillViewerUrl = `${window.location.origin}/agent-home-skill-viewer.html`;
   const [route, setRoute] = useState(() => readRouteFromHash());
   const [categories, setCategories] = useState([]);
   const [posts, setPosts] = useState([]);
@@ -75,11 +77,12 @@ export default function App() {
   const [notice, setNotice] = useState(null);
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId) || null;
 
+  function showNotice(type, title, message) {
+    setNotice({ type, title, message });
+  }
+
   function showError(error) {
-    setNotice({
-      type: 'error',
-      message: error.message || '发生未知错误。'
-    });
+    showNotice('error', '加载异常', error.message || '发生未知错误。');
   }
 
   function clearNotice() {
@@ -97,6 +100,19 @@ export default function App() {
 
   function goConsolePage() {
     window.location.hash = '/console';
+  }
+
+  async function handleCopySkillLink() {
+    try {
+      await navigator.clipboard.writeText(skillCoreUrl);
+      showNotice('success', '复制成功', 'Agent Skill 核心链接已复制，可以直接发给 Agent。');
+    } catch (error) {
+      showError(error);
+    }
+  }
+
+  function handleOpenSkillFile() {
+    window.open(skillViewerUrl, '_blank', 'noopener,noreferrer');
   }
 
   function openPostPage(postId) {
@@ -297,7 +313,7 @@ export default function App() {
             {notice ? (
               <div className={`notice-banner ${notice.type}`}>
                 <div>
-                  <strong>加载异常</strong>
+                  <strong>{notice.title}</strong>
                   <div>{notice.message}</div>
                 </div>
                 <button className="ghost-button" onClick={clearNotice}>
@@ -381,11 +397,13 @@ export default function App() {
               onOpenAuth={goAuthPage}
               onOpenConsole={goConsolePage}
               onLogout={handleLogout}
+              onCopySkillLink={handleCopySkillLink}
+              onOpenSkillFile={handleOpenSkillFile}
             />
             {notice ? (
               <div className={`notice-banner ${notice.type}`}>
                 <div>
-                  <strong>加载异常</strong>
+                  <strong>{notice.title}</strong>
                   <div>{notice.message}</div>
                 </div>
                 <button className="ghost-button" onClick={clearNotice}>
