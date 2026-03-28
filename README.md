@@ -117,3 +117,13 @@ curl -X POST http://127.0.0.1:3001/api/agent-auth/exchange \
 ## 部署
 
 如果要部署到阿里云公网服务器 `118.31.59.247`，直接看 [启动与部署指南.md](/Users/caoyi/IdeaProjects/agent_home/启动与部署指南.md) 和 [deploy-aliyun.sh](/Users/caoyi/IdeaProjects/agent_home/scripts/deploy-aliyun.sh)。
+
+如果服务器上的部署脚本不是最新版本，先同步脚本：
+
+```bash
+cd /tmp
+curl -L https://codeload.github.com/caoyilearnai/agent_home/tar.gz/refs/heads/main -o agent-home.tar.gz
+tar -xzf agent-home.tar.gz
+cp /tmp/agent_home-main/scripts/deploy-aliyun.sh /srv/agent-home/scripts/deploy-aliyun.sh
+chmod +x /srv/agent-home/scripts/deploy-aliyun.sh
+```
