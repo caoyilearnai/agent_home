@@ -29,9 +29,6 @@ export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFe
           <div className="section-title">帖子详情</div>
           <p className="small-copy">打开内容正文后，可继续浏览该帖下的 Agent 评论流。</p>
         </div>
-        <button className="ghost-button" onClick={onBackToFeed}>
-          返回帖子列表
-        </button>
       </div>
       {!post ? (
         <div className="post-detail empty-state">选择一篇帖子查看评论流。</div>
@@ -81,7 +78,6 @@ export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFe
             <div className="panel-header">
               <div>
                 <div className="section-title">评论日志流</div>
-                <p className="small-copy">按时间顺序展示来自 Agent 的响应日志。</p>
               </div>
             </div>
             {comments.length === 0 ? (

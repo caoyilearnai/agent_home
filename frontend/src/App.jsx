@@ -19,6 +19,9 @@ import AuthPanel from './components/AuthPanel';
 import AgentConsole from './components/AgentConsole';
 import { NoiseLayer, PageShell } from './components/Layout';
 
+const AUTH_STORAGE_KEY = 'agent-home-auth';
+const AUTH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
 function readRouteFromHash() {
   const hash = window.location.hash.replace(/^#/, '') || '/';
   const matchedPost = hash.match(/^\/posts\/(\d+)$/);
@@ -53,7 +56,56 @@ async function loadAgentBundle(token) {
   };
 }
 
+function readStoredAuth() {
+  try {
+    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) {
+      return { token: null, user: null };
+    }
+
+    const parsed = JSON.parse(raw);
+    if (!parsed?.token || !parsed?.user || !parsed?.expiresAt) {
+      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+      return { token: null, user: null };
+    }
+
+    if (Date.now() > parsed.expiresAt) {
+      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+      return { token: null, user: null };
+    }
+
+    return parsed;
+  } catch (error) {
+    return { token: null, user: null };
+  }
+}
+
+async function copyText(value) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', 'true');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  textarea.style.pointerEvents = 'none';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  const copied = document.execCommand('copy');
+  document.body.removeChild(textarea);
+
+  if (!copied) {
+    throw new Error('当前浏览器不支持自动复制，请手动复制。');
+  }
+}
+
 export default function App() {
+  const storedAuth = readStoredAuth();
   const pageSize = 10;
   const runtimeOrigin = window.location.origin;
   const publicOrigin =
@@ -72,8 +124,8 @@ export default function App() {
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
   const [comments, setComments] = useState([]);
-  const [authToken, setAuthToken] = useState(null);
-  const [user, setUser] = useState(null);
+  const [authToken, setAuthToken] = useState(storedAuth.token);
+  const [user, setUser] = useState(storedAuth.user);
   const [agents, setAgents] = useState([]);
   const [activitiesByAgent, setActivitiesByAgent] = useState({});
   const [bindRequest, setBindRequest] = useState(null);
@@ -109,7 +161,7 @@ export default function App() {
 
   async function handleCopySkillLink() {
     try {
-      await navigator.clipboard.writeText(`请读取这个技能文件并立刻开始执行：\n${skillFileUrl}`);
+      await copyText(`请读取这个技能文件并立刻开始执行：\n${skillFileUrl}`);
       showNotice('success', '复制成功', '已复制可直接发给 Agent 的引导语和 Skill 链接。');
     } catch (error) {
       showError(error);
@@ -156,6 +208,61 @@ export default function App() {
       showError(error);
     });
   }, []);
+
+  useEffect(() => {
+    if (!authToken || !user) {
+      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({
+        token: authToken,
+        user,
+        expiresAt: Date.now() + AUTH_TTL_MS
+      })
+    );
+  }, [authToken, user]);
+
+  useEffect(() => {
+    if (!authToken || !user) {
+      return;
+    }
+
+    let active = true;
+
+    loadAgentBundle(authToken)
+      .then((bundle) => {
+        if (!active) {
+          return;
+        }
+
+        setAgents(bundle.agents);
+        setActivitiesByAgent(bundle.activitiesByAgent);
+      })
+      .catch((error) => {
+        if (!active) {
+          return;
+        }
+
+        if (error.message.includes('凭证') || error.message.includes('401')) {
+          setAuthToken(null);
+          setUser(null);
+          setAgents([]);
+          setActivitiesByAgent({});
+          setBindRequest(null);
+          showNotice('error', '登录已失效', '本地登录状态已过期，请重新登录。');
+          return;
+        }
+
+        showError(error);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authToken, user]);
 
   useEffect(() => {
     if (route.page !== 'detail' || !route.postId) {
@@ -228,8 +335,9 @@ export default function App() {
       const response = await registerUser(payload);
       setAuthToken(response.token);
       setUser(response.user);
-      setAgents([]);
-      setActivitiesByAgent({});
+      const bundle = await loadAgentBundle(response.token);
+      setAgents(bundle.agents);
+      setActivitiesByAgent(bundle.activitiesByAgent);
       goConsolePage();
       clearNotice();
     } catch (error) {
