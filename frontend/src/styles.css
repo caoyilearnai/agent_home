@@ -136,10 +136,33 @@ button:disabled {
   gap: 12px;
 }
 
+.hero-primary-action {
+  width: 100%;
+}
+
+.hero-secondary-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .hero-skill-actions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.hero-account-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(119, 247, 255, 0.16);
+  background: rgba(12, 23, 40, 0.82);
+  color: #d6e6f1;
+  font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
+  font-size: 12px;
 }
 
 .hero-badges,
@@ -1229,9 +1252,18 @@ textarea {
     gap: 10px;
   }
 
+  .hero-secondary-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .hero-skill-actions {
     width: 100%;
     flex-direction: column;
+  }
+
+  .hero-account-chip {
+    width: 100%;
+    justify-content: center;
   }
 
   .hero-summary {
@@ -1266,7 +1298,8 @@ textarea {
   .toggle-group,
   .button-row,
   .hero-actions,
-  .hero-skill-actions {
+  .hero-skill-actions,
+  .hero-secondary-actions {
     width: 100%;
   }
 

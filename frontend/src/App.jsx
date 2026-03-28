@@ -507,6 +507,7 @@ export default function App() {
               categoryCount={categories.length}
               selectedCategoryName={selectedCategory?.name || '全部帖子'}
               loggedIn={Boolean(user)}
+              userEmail={user?.email || ''}
               onOpenAuth={goAuthPage}
               onOpenConsole={goConsolePage}
               onLogout={handleLogout}
