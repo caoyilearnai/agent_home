@@ -4,6 +4,7 @@ const fs = require('fs');
 const http = require('http');
 const os = require('os');
 const path = require('path');
+const { calculateHotScore } = require('../src/services/forum-service');
 
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-home-backend-test-'));
 process.env.AGENT_HOME_DB_PATH = path.join(tempDir, 'agent_home.test.sqlite');
@@ -86,6 +87,121 @@ test('Agent Home backend API integration', async (t) => {
     assert.equal(posts.json.pagination.limit, 1);
     assert.ok(posts.json.pagination.total >= 2);
     assert.ok(posts.json.pagination.totalPages >= 2);
+  });
+
+  await t.test('orders newest and hottest post lists deterministically', async () => {
+    const agentId = db.prepare(`
+      SELECT id
+      FROM agent_profiles
+      ORDER BY id ASC
+      LIMIT 1
+    `).get().id;
+
+    const categoryId = db.prepare(`
+      SELECT id
+      FROM topic_categories
+      WHERE slug = ?
+    `).get('after-hours').id;
+
+    db.prepare(`
+      INSERT INTO posts (agent_id, category_id, title, body, status, like_count, comment_count, hot_score, created_at, updated_at)
+      VALUES (?, ?, ?, ?, 'visible', ?, ?, ?, ?, ?)
+    `).run(
+      agentId,
+      categoryId,
+      '排序测试-较旧高热',
+      'older hot post',
+      50,
+      20,
+      90,
+      '2026-03-28T08:00:00.000Z',
+      '2026-03-28T08:00:00.000Z'
+    );
+
+    db.prepare(`
+      INSERT INTO posts (agent_id, category_id, title, body, status, like_count, comment_count, hot_score, created_at, updated_at)
+      VALUES (?, ?, ?, ?, 'visible', ?, ?, ?, ?, ?)
+    `).run(
+      agentId,
+      categoryId,
+      '排序测试-最新较低热',
+      'newer low hot post',
+      1,
+      0,
+      10,
+      '2026-03-29T08:00:00.000Z',
+      '2026-03-29T08:00:00.000Z'
+    );
+
+    db.prepare(`
+      INSERT INTO posts (agent_id, category_id, title, body, status, like_count, comment_count, hot_score, created_at, updated_at)
+      VALUES (?, ?, ?, ?, 'visible', ?, ?, ?, ?, ?)
+    `).run(
+      agentId,
+      categoryId,
+      '排序测试-中间热度',
+      'middle post',
+      8,
+      3,
+      40,
+      '2026-03-28T20:00:00.000Z',
+      '2026-03-28T20:00:00.000Z'
+    );
+
+    const hotCandidates = [
+      {
+        title: '排序测试-较旧高热',
+        likeCount: 50,
+        commentCount: 20,
+        createdAt: '2026-03-28T08:00:00.000Z'
+      },
+      {
+        title: '排序测试-最新较低热',
+        likeCount: 1,
+        commentCount: 0,
+        createdAt: '2026-03-29T08:00:00.000Z'
+      },
+      {
+        title: '排序测试-中间热度',
+        likeCount: 8,
+        commentCount: 3,
+        createdAt: '2026-03-28T20:00:00.000Z'
+      }
+    ];
+
+    const newest = await apiRequest(`/api/posts?sort=new&categoryId=${categoryId}&page=1&limit=3`);
+    assert.equal(newest.status, 200);
+    assert.deepEqual(
+      newest.json.items.map((item) => item.title),
+      ['排序测试-最新较低热', '排序测试-中间热度', '排序测试-较旧高热']
+    );
+
+    const hottest = await apiRequest(`/api/posts?sort=hot&categoryId=${categoryId}&page=1&limit=3`);
+    assert.equal(hottest.status, 200);
+    const expectedHotTitles = hotCandidates
+      .map((item) => ({
+        ...item,
+        hotScore: calculateHotScore(item),
+        engagement: item.likeCount + item.commentCount
+      }))
+      .sort((a, b) => {
+        if (b.engagement !== a.engagement) {
+          return b.engagement - a.engagement;
+        }
+        if (b.hotScore !== a.hotScore) {
+          return b.hotScore - a.hotScore;
+        }
+        if (b.createdAt !== a.createdAt) {
+          return b.createdAt.localeCompare(a.createdAt);
+        }
+        return b.title.localeCompare(a.title);
+      })
+      .map((item) => item.title);
+
+    assert.deepEqual(
+      hottest.json.items.map((item) => item.title),
+      expectedHotTitles
+    );
   });
 
   await t.test('registers and logs in a viewer user', async () => {

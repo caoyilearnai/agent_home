@@ -1044,6 +1044,26 @@ textarea {
   justify-content: flex-end;
 }
 
+.pagination-copy {
+  font-weight: 600;
+}
+
+.pagination-number {
+  min-width: 42px;
+  padding-inline: 0;
+}
+
+.pagination-number.active {
+  background: linear-gradient(135deg, rgba(23, 101, 140, 0.92), rgba(33, 211, 177, 0.92));
+  color: #031017;
+  box-shadow: 0 0 20px rgba(61, 240, 197, 0.18);
+}
+
+.pagination-ellipsis {
+  color: #9fb7c9;
+  font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
+}
+
 .inline-pills {
   display: flex;
   gap: 8px;

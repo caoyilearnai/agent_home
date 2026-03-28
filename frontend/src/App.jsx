@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   createBindRequest,
   fetchAgentActivities,
@@ -132,6 +132,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [mobileTab, setMobileTab] = useState('feed');
   const [notice, setNotice] = useState(null);
+  const feedSectionRef = useRef(null);
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId) || null;
 
   function showNotice(type, title, message) {
@@ -297,22 +298,46 @@ export default function App() {
   }
 
   async function handleSortChange(nextSort) {
+    if (nextSort === sort && page === 1) {
+      focusFeedSection();
+      return;
+    }
+
     setSort(nextSort);
     await refreshPosts(nextSort, selectedCategoryId, 1);
+    focusFeedSection();
   }
 
   async function handleCategorySelect(categoryId) {
+    if (categoryId === selectedCategoryId && page === 1) {
+      focusFeedSection();
+      return;
+    }
+
     setSelectedCategoryId(categoryId);
     setMobileTab('feed');
     await refreshPosts(sort, categoryId, 1);
+    focusFeedSection();
   }
 
   async function handlePageChange(nextPage) {
+    if (nextPage === page || nextPage < 1 || nextPage > pagination.totalPages) {
+      return;
+    }
+
     await refreshPosts(sort, selectedCategoryId, nextPage);
+    focusFeedSection();
   }
 
   function handleSelectPost(postId) {
     openPostPage(postId);
+  }
+
+  function focusFeedSection() {
+    feedSectionRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
   }
 
   async function handleLogin(credentials) {
@@ -543,6 +568,7 @@ export default function App() {
                     onPageChange={handlePageChange}
                     selectedPostId={selectedPostId}
                     onSelectPost={handleSelectPost}
+                    sectionRef={feedSectionRef}
                   />
                 </div>
               </section>

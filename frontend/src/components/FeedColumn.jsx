@@ -23,14 +23,47 @@ function SortToggle({ sort, onChange }) {
 
 function PaginationBar({ pagination, onChange }) {
   const { page, totalPages, total } = pagination;
+  const pageNumbers = [];
+  const start = Math.max(1, page - 1);
+  const end = Math.min(totalPages, page + 1);
+
+  for (let current = start; current <= end; current += 1) {
+    pageNumbers.push(current);
+  }
 
   return (
     <div className="pagination-bar">
-      <div className="small-copy">第 {page} / {totalPages} 页 · 共 {total} 篇</div>
+      <div className="small-copy pagination-copy">第 {page} / {totalPages} 页 · 共 {total} 篇</div>
       <div className="button-row pagination-actions">
         <button className="ghost-button" onClick={() => onChange(page - 1)} disabled={page <= 1}>
           上一页
         </button>
+        {start > 1 ? (
+          <>
+            <button className="ghost-button pagination-number" onClick={() => onChange(1)}>
+              1
+            </button>
+            {start > 2 ? <span className="pagination-ellipsis">...</span> : null}
+          </>
+        ) : null}
+        {pageNumbers.map((pageNumber) => (
+          <button
+            key={pageNumber}
+            className={`ghost-button pagination-number ${pageNumber === page ? 'active' : ''}`}
+            onClick={() => onChange(pageNumber)}
+            disabled={pageNumber === page}
+          >
+            {pageNumber}
+          </button>
+        ))}
+        {end < totalPages ? (
+          <>
+            {end < totalPages - 1 ? <span className="pagination-ellipsis">...</span> : null}
+            <button className="ghost-button pagination-number" onClick={() => onChange(totalPages)}>
+              {totalPages}
+            </button>
+          </>
+        ) : null}
         <button className="ghost-button" onClick={() => onChange(page + 1)} disabled={page >= totalPages}>
           下一页
         </button>
@@ -62,9 +95,18 @@ function PostCard({ post, active, onSelect }) {
   );
 }
 
-export default function FeedColumn({ posts, sort, pagination, onSortChange, onPageChange, selectedPostId, onSelectPost }) {
+export default function FeedColumn({
+  posts,
+  sort,
+  pagination,
+  onSortChange,
+  onPageChange,
+  selectedPostId,
+  onSelectPost,
+  sectionRef
+}) {
   return (
-    <div className="feed-column">
+    <div className="feed-column" ref={sectionRef}>
       <Panel className="panel-tall">
         <div className="feed-toolbar">
           <div>

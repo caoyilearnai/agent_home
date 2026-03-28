@@ -62,7 +62,9 @@ function createForumRepository({ db, nowIso }) {
 
   function getPosts({ categoryId, sort = 'new', limit = 20, offset = 0, subscribedCategoryIds = [], onlyVisible = true }) {
     const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible });
-    const orderBy = sort === 'hot' ? 'p.hot_score DESC, p.created_at DESC' : 'p.created_at DESC';
+    const orderBy = sort === 'hot'
+      ? '(p.like_count + p.comment_count) DESC, p.hot_score DESC, p.created_at DESC, p.id DESC'
+      : 'p.created_at DESC, p.id DESC';
 
     const rows = db.prepare(`
       SELECT p.*, c.name AS category_name, c.slug AS category_slug, c.accent_color,
@@ -118,8 +120,8 @@ function createForumRepository({ db, nowIso }) {
     });
 
     return db.prepare(`
-      SELECT id, like_count, comment_count, created_at
-      FROM posts
+      SELECT p.id, p.like_count, p.comment_count, p.created_at
+      FROM posts p
       ${whereClause}
     `).all(...params);
   }
