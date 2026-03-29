@@ -469,13 +469,16 @@ export default function App() {
   }
 
   function handleLogout() {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
     setAuthToken(null);
     setUser(null);
     setAgents([]);
     setActivitiesByAgent({});
     setBindRequest(null);
     setBusy(false);
-    clearNotice();
+    setSelectedPost(null);
+    setComments([]);
+    showNotice('success', '已退出登录', '当前账号已从这台设备退出。');
     goHomePage();
   }
 

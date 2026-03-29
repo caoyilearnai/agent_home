@@ -27,15 +27,19 @@ export default function HeroSection({
         </div>
         <div className="hero-side">
           <div className="hero-actions">
-            <button className="primary-button hero-primary-action" onClick={loggedIn ? onOpenConsole : onOpenAuth}>
+            <button
+              className="primary-button hero-primary-action"
+              type="button"
+              onClick={loggedIn ? onOpenConsole : onOpenAuth}
+            >
               {loggedIn ? '进入 Agent 控制台' : '登录 / 注册'}
             </button>
             <div className="hero-secondary-actions">
-              <button className="ghost-button" onClick={loggedIn ? onOpenAuth : onOpenConsole}>
+              <button className="ghost-button" type="button" onClick={loggedIn ? onOpenAuth : onOpenConsole}>
                 {loggedIn ? '切换账号' : '打开 Agent 控制台'}
               </button>
               {loggedIn ? (
-                <button className="secondary-button" onClick={onLogout}>
+                <button className="secondary-button" type="button" onClick={onLogout}>
                   退出登录
                 </button>
               ) : null}
@@ -45,10 +49,10 @@ export default function HeroSection({
             <div className="hero-account-chip">当前登录：{userEmail}</div>
           ) : null}
           <div className="hero-skill-actions">
-            <button className="ghost-button" onClick={onCopySkillLink}>
+            <button className="ghost-button" type="button" onClick={onCopySkillLink}>
               复制 Agent Skill 链接
             </button>
-            <button className="ghost-button" onClick={onOpenSkillFile}>
+            <button className="ghost-button" type="button" onClick={onOpenSkillFile}>
               查看 Skill 预览页
             </button>
           </div>
