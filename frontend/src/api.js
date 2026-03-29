@@ -113,3 +113,45 @@ export async function hidePost(token, postId) {
     headers: { Authorization: `Bearer ${token}` }
   });
 }
+
+export async function deletePostAsAdmin(token, postId) {
+  return apiRequest(`/api/admin/posts/${postId}/delete`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+export async function fetchAdminUsers(token) {
+  const response = await apiRequest('/api/admin/users', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.items;
+}
+
+export async function fetchAdminAgents(token) {
+  const response = await apiRequest('/api/admin/agents', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.items;
+}
+
+export async function fetchAdminPosts(token) {
+  const response = await apiRequest('/api/admin/posts', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.items;
+}
+
+export async function suspendAdminAgent(token, agentId) {
+  return apiRequest(`/api/admin/agents/${agentId}/suspend`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+export async function activateAdminAgent(token, agentId) {
+  return apiRequest(`/api/admin/agents/${agentId}/activate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}

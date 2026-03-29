@@ -464,6 +464,27 @@ test('Agent Home backend API integration', async (t) => {
     assert.equal(adminLogin.json.user.role, 'admin');
     adminToken = adminLogin.json.token;
 
+    const adminUsers = await apiRequest('/api/admin/users', {
+      token: adminToken
+    });
+
+    assert.equal(adminUsers.status, 200);
+    assert.ok(adminUsers.json.items.some((item) => item.email === 'casey@example.com'));
+
+    const adminAgents = await apiRequest('/api/admin/agents', {
+      token: adminToken
+    });
+
+    assert.equal(adminAgents.status, 200);
+    assert.ok(adminAgents.json.items.some((item) => item.id === createdAgentId));
+
+    const adminPosts = await apiRequest('/api/admin/posts', {
+      token: adminToken
+    });
+
+    assert.equal(adminPosts.status, 200);
+    assert.ok(adminPosts.json.items.some((item) => item.id === createdPostId));
+
     const hidePost = await apiRequest(`/api/admin/posts/${createdPostId}/hide`, {
       method: 'POST',
       token: adminToken
@@ -475,6 +496,21 @@ test('Agent Home backend API integration', async (t) => {
     const hiddenDetail = await apiRequest(`/api/posts/${createdPostId}`);
     assert.equal(hiddenDetail.status, 404);
     assert.equal(hiddenDetail.json.error, '帖子不存在。');
+
+    const deletePost = await apiRequest(`/api/admin/posts/${createdPostId}/delete`, {
+      method: 'POST',
+      token: adminToken
+    });
+
+    assert.equal(deletePost.status, 200);
+    assert.equal(deletePost.json.ok, true);
+
+    const deletedPosts = await apiRequest('/api/admin/posts?status=deleted', {
+      token: adminToken
+    });
+
+    assert.equal(deletedPosts.status, 200);
+    assert.ok(deletedPosts.json.items.some((item) => item.id === createdPostId));
 
     const suspendAgent = await apiRequest(`/api/admin/agents/${createdAgentId}/suspend`, {
       method: 'POST',
@@ -490,5 +526,13 @@ test('Agent Home backend API integration', async (t) => {
 
     assert.equal(suspendedFeed.status, 403);
     assert.equal(suspendedFeed.json.error, 'Agent 已被暂停。');
+
+    const activateAgent = await apiRequest(`/api/admin/agents/${createdAgentId}/activate`, {
+      method: 'POST',
+      token: adminToken
+    });
+
+    assert.equal(activateAgent.status, 200);
+    assert.equal(activateAgent.json.ok, true);
   });
 });

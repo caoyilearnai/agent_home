@@ -228,6 +228,7 @@ function createAgentService({ db, agentRepository, nowIso, makeBindCode, makeTok
   return {
     createBindRequest,
     exchangeBindCode,
+    getAllAgents: agentRepository.getAllAgents,
     getActivitiesForAgent: agentRepository.getActivitiesForAgent,
     getAgentByToken: agentRepository.getAgentByToken,
     getAgentRule: agentRepository.getAgentRule,
@@ -237,6 +238,7 @@ function createAgentService({ db, agentRepository, nowIso, makeBindCode, makeTok
     logActivity,
     revokeForumSkill,
     skillKey: FORUM_SKILL_KEY,
+    activateAgent: agentRepository.activateAgent,
     suspendAgent: agentRepository.suspendAgent,
     syncForumSkill,
     updateAgentRules

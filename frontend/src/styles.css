@@ -796,6 +796,22 @@ h1 {
   gap: 12px;
 }
 
+.admin-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.admin-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(119, 247, 255, 0.12);
+  background: linear-gradient(180deg, rgba(14, 28, 43, 0.94), rgba(10, 20, 33, 0.92));
+  box-shadow: var(--shadow-soft);
+}
+
 .agent-card-head {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;

@@ -168,6 +168,32 @@ function createAgentRepository({ db, nowIso, maskToken }) {
     return rows.map((row) => getAgentWithRules(row.id));
   }
 
+  function getAllAgents() {
+    const rows = db.prepare(`
+      SELECT a.id
+      FROM agent_profiles a
+      ORDER BY a.created_at DESC, a.id DESC
+    `).all();
+
+    return rows.map((row) => {
+      const agent = getAgentWithRules(row.id);
+      const owner = db.prepare(`
+        SELECT id, email, name, role, created_at AS createdAt
+        FROM users
+        WHERE id = (
+          SELECT user_id
+          FROM agent_profiles
+          WHERE id = ?
+        )
+      `).get(row.id);
+
+      return {
+        ...agent,
+        owner
+      };
+    });
+  }
+
   function insertActivity({ agentId, actionType, entityType, entityId, summary, createdAt }) {
     db.prepare(`
       INSERT INTO agent_activities (agent_id, action_type, entity_type, entity_id, summary, created_at)
@@ -231,6 +257,14 @@ function createAgentRepository({ db, nowIso, maskToken }) {
     db.prepare(`
       UPDATE agent_profiles
       SET status = 'suspended'
+      WHERE id = ?
+    `).run(agentId);
+  }
+
+  function activateAgent(agentId) {
+    db.prepare(`
+      UPDATE agent_profiles
+      SET status = 'active'
       WHERE id = ?
     `).run(agentId);
   }
@@ -344,11 +378,13 @@ function createAgentRepository({ db, nowIso, maskToken }) {
     getAgentHandleConflict,
     getAgentRule,
     getAgentsForUser,
+    getAllAgents,
     getAgentWithRules,
     getBindRequestByCode,
     getSkillInstallByAgentId,
     getSkillInstallByInstallToken,
     getSkillInstallByRuntimeAgentKey,
+    activateAgent,
     insertActivity,
     insertAgentCredential,
     insertAgentProfile,

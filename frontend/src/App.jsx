@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  activateAdminAgent,
   createBindRequest,
+  deletePostAsAdmin,
+  fetchAdminAgents,
+  fetchAdminPosts,
+  fetchAdminUsers,
   fetchAgentActivities,
   fetchAgents,
   fetchHomepage,
@@ -9,6 +14,7 @@ import {
   hidePost,
   loginUser,
   registerUser,
+  suspendAdminAgent,
   updateAgentRules
 } from './api';
 import HeroSection from './components/HeroSection';
@@ -54,6 +60,16 @@ async function loadAgentBundle(token) {
     agents,
     activitiesByAgent: Object.fromEntries(activitiesEntries)
   };
+}
+
+async function loadAdminBundle(token) {
+  const [users, agents, posts] = await Promise.all([
+    fetchAdminUsers(token),
+    fetchAdminAgents(token),
+    fetchAdminPosts(token)
+  ]);
+
+  return { users, agents, posts };
 }
 
 function readStoredAuth() {
@@ -132,6 +148,9 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [mobileTab, setMobileTab] = useState('feed');
   const [notice, setNotice] = useState(null);
+  const [adminUsers, setAdminUsers] = useState([]);
+  const [adminAgents, setAdminAgents] = useState([]);
+  const [adminPosts, setAdminPosts] = useState([]);
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.matchMedia('(max-width: 899px)').matches);
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
   const feedSectionRef = useRef(null);
@@ -258,6 +277,21 @@ export default function App() {
 
         setAgents(bundle.agents);
         setActivitiesByAgent(bundle.activitiesByAgent);
+        if (user.role === 'admin') {
+          return loadAdminBundle(authToken).then((adminBundle) => {
+            if (!active) {
+              return;
+            }
+
+            setAdminUsers(adminBundle.users);
+            setAdminAgents(adminBundle.agents);
+            setAdminPosts(adminBundle.posts);
+          });
+        }
+
+        setAdminUsers([]);
+        setAdminAgents([]);
+        setAdminPosts([]);
       })
       .catch((error) => {
         if (!active) {
@@ -269,6 +303,9 @@ export default function App() {
           setUser(null);
           setAgents([]);
           setActivitiesByAgent({});
+          setAdminUsers([]);
+          setAdminAgents([]);
+          setAdminPosts([]);
           setBindRequest(null);
           showNotice('error', '登录已失效', '本地登录状态已过期，请重新登录。');
           return;
@@ -393,6 +430,12 @@ export default function App() {
       const bundle = await loadAgentBundle(response.token);
       setAgents(bundle.agents);
       setActivitiesByAgent(bundle.activitiesByAgent);
+      if (response.user.role === 'admin') {
+        const adminBundle = await loadAdminBundle(response.token);
+        setAdminUsers(adminBundle.users);
+        setAdminAgents(adminBundle.agents);
+        setAdminPosts(adminBundle.posts);
+      }
       goConsolePage();
       clearNotice();
     } catch (error) {
@@ -408,6 +451,12 @@ export default function App() {
       const bundle = await loadAgentBundle(response.token);
       setAgents(bundle.agents);
       setActivitiesByAgent(bundle.activitiesByAgent);
+      if (response.user.role === 'admin') {
+        const adminBundle = await loadAdminBundle(response.token);
+        setAdminUsers(adminBundle.users);
+        setAdminAgents(adminBundle.agents);
+        setAdminPosts(adminBundle.posts);
+      }
       goConsolePage();
       clearNotice();
     } catch (error) {
@@ -474,12 +523,84 @@ export default function App() {
     setUser(null);
     setAgents([]);
     setActivitiesByAgent({});
+    setAdminUsers([]);
+    setAdminAgents([]);
+    setAdminPosts([]);
     setBindRequest(null);
     setBusy(false);
     setSelectedPost(null);
     setComments([]);
     showNotice('success', '已退出登录', '当前账号已从这台设备退出。');
     goHomePage();
+  }
+
+  async function refreshAdminData(token = authToken) {
+    if (!token || user?.role !== 'admin') {
+      return;
+    }
+
+    const adminBundle = await loadAdminBundle(token);
+    setAdminUsers(adminBundle.users);
+    setAdminAgents(adminBundle.agents);
+    setAdminPosts(adminBundle.posts);
+  }
+
+  async function handleAdminHidePost(postId) {
+    if (!authToken) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await hidePost(authToken, postId);
+      await refreshPosts();
+      await refreshAdminData();
+      clearNotice();
+    } catch (error) {
+      showError(error);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleAdminDeletePost(postId) {
+    if (!authToken) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await deletePostAsAdmin(authToken, postId);
+      await refreshPosts();
+      await refreshAdminData();
+      clearNotice();
+    } catch (error) {
+      showError(error);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleAdminAgentStatus(agentId, nextStatus) {
+    if (!authToken) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      if (nextStatus === 'active') {
+        await activateAdminAgent(authToken, agentId);
+      } else {
+        await suspendAdminAgent(authToken, agentId);
+      }
+
+      await refreshAdminData();
+      clearNotice();
+    } catch (error) {
+      showError(error);
+    } finally {
+      setBusy(false);
+    }
   }
 
   useEffect(() => {
@@ -607,6 +728,12 @@ export default function App() {
                 onSaveRules={handleSaveRules}
                 busy={busy}
                 onOpenAuth={goAuthPage}
+                adminUsers={adminUsers}
+                adminAgents={adminAgents}
+                adminPosts={adminPosts}
+                onAdminHidePost={handleAdminHidePost}
+                onAdminDeletePost={handleAdminDeletePost}
+                onAdminAgentStatus={handleAdminAgentStatus}
               />
             </div>
           </main>

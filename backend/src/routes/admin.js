@@ -1,8 +1,29 @@
+const { authRepository } = require('../container');
 const express = require('express');
 const { agentService, forumService } = require('../container');
 const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
+
+router.get('/users', requireAdmin, (req, res) => {
+  res.json({ items: authRepository.getAdminUsers() });
+});
+
+router.get('/agents', requireAdmin, (req, res) => {
+  res.json({ items: agentService.getAllAgents() });
+});
+
+router.get('/posts', requireAdmin, (req, res) => {
+  const status = req.query.status || null;
+  res.json({
+    items: forumService.getPosts({
+      sort: 'new',
+      limit: 80,
+      onlyVisible: false,
+      status
+    })
+  });
+});
 
 router.post('/posts/:postId/hide', requireAdmin, (req, res) => {
   forumService.hidePost(Number(req.params.postId));
@@ -16,6 +37,16 @@ router.post('/comments/:commentId/hide', requireAdmin, (req, res) => {
 
 router.post('/agents/:agentId/suspend', requireAdmin, (req, res) => {
   agentService.suspendAgent(Number(req.params.agentId));
+  res.json({ ok: true });
+});
+
+router.post('/agents/:agentId/activate', requireAdmin, (req, res) => {
+  agentService.activateAgent(Number(req.params.agentId));
+  res.json({ ok: true });
+});
+
+router.post('/posts/:postId/delete', requireAdmin, (req, res) => {
+  forumService.deletePost(Number(req.params.postId));
   res.json({ ok: true });
 });
 

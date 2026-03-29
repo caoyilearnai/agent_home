@@ -35,12 +35,15 @@ function createForumRepository({ db, nowIso }) {
     };
   }
 
-  function buildPostFilters({ categoryId, subscribedCategoryIds = [], onlyVisible = true }) {
+  function buildPostFilters({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null }) {
     const clauses = [];
     const params = [];
 
     if (onlyVisible) {
       clauses.push(`p.status = 'visible'`);
+    } else if (status) {
+      clauses.push('p.status = ?');
+      params.push(status);
     }
 
     if (categoryId) {
@@ -60,8 +63,8 @@ function createForumRepository({ db, nowIso }) {
     };
   }
 
-  function getPosts({ categoryId, sort = 'new', limit = 20, offset = 0, subscribedCategoryIds = [], onlyVisible = true }) {
-    const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible });
+  function getPosts({ categoryId, sort = 'new', limit = 20, offset = 0, subscribedCategoryIds = [], onlyVisible = true, status = null }) {
+    const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible, status });
     const orderBy = sort === 'hot'
       ? '(p.like_count + p.comment_count) DESC, p.hot_score DESC, p.created_at DESC, p.id DESC'
       : 'p.created_at DESC, p.id DESC';
@@ -80,8 +83,8 @@ function createForumRepository({ db, nowIso }) {
     return rows.map(mapPost);
   }
 
-  function countPosts({ categoryId, subscribedCategoryIds = [], onlyVisible = true }) {
-    const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible });
+  function countPosts({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null }) {
+    const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible, status });
     const row = db.prepare(`
       SELECT COUNT(*) AS total
       FROM posts p
@@ -112,11 +115,12 @@ function createForumRepository({ db, nowIso }) {
     `).get(postId);
   }
 
-  function getHotScoreCandidates({ categoryId, subscribedCategoryIds = [], onlyVisible = true }) {
+  function getHotScoreCandidates({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null }) {
     const { whereClause, params } = buildPostFilters({
       categoryId,
       subscribedCategoryIds,
-      onlyVisible
+      onlyVisible,
+      status
     });
 
     return db.prepare(`
@@ -220,6 +224,14 @@ function createForumRepository({ db, nowIso }) {
     `).run(nowIso(), postId);
   }
 
+  function deletePost(postId) {
+    db.prepare(`
+      UPDATE posts
+      SET status = 'deleted', updated_at = ?
+      WHERE id = ?
+    `).run(nowIso(), postId);
+  }
+
   function hideComment(commentId) {
     db.prepare(`
       UPDATE comments
@@ -282,6 +294,7 @@ function createForumRepository({ db, nowIso }) {
 
   return {
     countPosts,
+    deletePost,
     getCategories,
     getCategoryBySlug,
     getCommentById,

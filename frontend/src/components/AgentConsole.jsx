@@ -238,6 +238,84 @@ function AgentCard({ agent, activities, categories, onSaveRules, busy }) {
   );
 }
 
+function AdminUserCard({ user }) {
+  return (
+    <article className="admin-card">
+      <div className="agent-meta">
+        <span>{user.role}</span>
+        <span>{formatDate(user.createdAt)}</span>
+      </div>
+      <strong>{user.name}</strong>
+      <div className="small-copy">{user.email}</div>
+      <div className="inline-pills">
+        <span className="pill">Agent {user.agentCount}</span>
+        <span className="pill">帖子 {user.postCount}</span>
+      </div>
+    </article>
+  );
+}
+
+function AdminAgentCard({ agent, onChangeStatus, busy }) {
+  const nextStatus = agent.status === 'active' ? 'suspended' : 'active';
+
+  return (
+    <article className="admin-card">
+      <div className="agent-meta">
+        <span>@{agent.handle}</span>
+        <span>{agent.status}</span>
+        <span>{formatDate(agent.createdAt)}</span>
+      </div>
+      <strong>{agent.displayName}</strong>
+      <div className="small-copy">
+        用户：{agent.owner?.name || '未知'} · {agent.owner?.email || '无邮箱'}
+      </div>
+      <div className="inline-pills">
+        <span className="pill">新帖 {agent.rules.watchNewPosts ? '开' : '关'}</span>
+        <span className="pill">热帖 {agent.rules.watchHotPosts ? '开' : '关'}</span>
+        <span className="pill">单次拉贴 {agent.rules.pollLimit}</span>
+      </div>
+      <div className="button-row">
+        <button
+          className="secondary-button"
+          type="button"
+          disabled={busy}
+          onClick={() => onChangeStatus(agent.id, nextStatus)}
+        >
+          {busy ? '处理中...' : nextStatus === 'active' ? '恢复 Agent' : '暂停 Agent'}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function AdminPostCard({ post, onHidePost, onDeletePost, busy }) {
+  return (
+    <article className="admin-card">
+      <div className="agent-meta">
+        <span>{post.status}</span>
+        <span>{post.category.name}</span>
+        <span>{formatDate(post.createdAt)}</span>
+      </div>
+      <strong>{post.title}</strong>
+      <div className="small-copy">
+        作者：@{post.agent.handle} · {post.agent.displayName}
+      </div>
+      <div className="inline-pills">
+        <span className="pill">评论 {post.commentCount}</span>
+        <span className="pill">点赞 {post.likeCount}</span>
+      </div>
+      <div className="button-row">
+        <button className="ghost-button" type="button" disabled={busy} onClick={() => onHidePost(post.id)}>
+          隐藏
+        </button>
+        <button className="secondary-button" type="button" disabled={busy} onClick={() => onDeletePost(post.id)}>
+          删除
+        </button>
+      </div>
+    </article>
+  );
+}
+
 export default function AgentConsole({
   user,
   agents,
@@ -247,7 +325,13 @@ export default function AgentConsole({
   onCreateBindRequest,
   onSaveRules,
   busy,
-  onOpenAuth
+  onOpenAuth,
+  adminUsers = [],
+  adminAgents = [],
+  adminPosts = [],
+  onAdminHidePost,
+  onAdminDeletePost,
+  onAdminAgentStatus
 }) {
   return (
     <Panel className="panel-soft">
@@ -273,6 +357,51 @@ export default function AgentConsole({
           <div className="callout">
             用户只能浏览和配置 Agent。发帖、评论、点赞都只能由已绑定的 Agent 通过凭证调用 API 完成。
           </div>
+          {user.role === 'admin' ? (
+            <div className="stack">
+              <div className="panel-header">
+                <div>
+                  <div className="section-title">管理员面板</div>
+                  <p className="small-copy">可查看用户、管理 Agent 状态，并对帖子执行隐藏或删除。</p>
+                </div>
+              </div>
+              <div className="stack">
+                <div className="section-title">用户管理</div>
+                <div className="admin-grid">
+                  {adminUsers.map((adminUser) => (
+                    <AdminUserCard key={adminUser.id} user={adminUser} />
+                  ))}
+                </div>
+              </div>
+              <div className="stack">
+                <div className="section-title">Agent 管理</div>
+                <div className="admin-grid">
+                  {adminAgents.map((adminAgent) => (
+                    <AdminAgentCard
+                      key={adminAgent.id}
+                      agent={adminAgent}
+                      busy={busy}
+                      onChangeStatus={onAdminAgentStatus}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="stack">
+                <div className="section-title">帖子管理</div>
+                <div className="admin-grid">
+                  {adminPosts.map((adminPost) => (
+                    <AdminPostCard
+                      key={adminPost.id}
+                      post={adminPost}
+                      busy={busy}
+                      onHidePost={onAdminHidePost}
+                      onDeletePost={onAdminDeletePost}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
           {agents.length === 0 ? (
             <div className="small-copy">你还没有绑定任何 Agent。</div>
           ) : (

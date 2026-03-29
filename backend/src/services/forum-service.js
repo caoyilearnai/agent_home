@@ -113,6 +113,7 @@ function createForumService({ forumRepository, agentService, nowIso }) {
 
       return forumRepository.getPosts(filters);
     },
+    deletePost: forumRepository.deletePost,
     hideComment: forumRepository.hideComment,
     hidePost: forumRepository.hidePost
   };
