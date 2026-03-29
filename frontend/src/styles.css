@@ -721,6 +721,42 @@ html[data-theme='signal'] .dock-button.active {
   box-shadow: 0 0 18px rgba(142, 46, 74, 0.24);
 }
 
+html[data-theme='signal'] .panel::before {
+  background: linear-gradient(180deg, rgba(255, 122, 89, 0.05), transparent 24%);
+}
+
+html[data-theme='signal'] .panel-focus,
+html[data-theme='signal'] .detail-comments,
+html[data-theme='signal'] .detail-page-kicker,
+html[data-theme='signal'] .ghost-button,
+html[data-theme='signal'] .secondary-button {
+  border-color: rgba(255, 147, 117, 0.16);
+}
+
+html[data-theme='signal'] .panel-focus,
+html[data-theme='signal'] .detail-comments {
+  background: rgba(32, 14, 41, 0.92);
+}
+
+html[data-theme='signal'] .empty-state,
+html[data-theme='signal'] .detail-comments .small-copy,
+html[data-theme='signal'] .panel-header .small-copy {
+  color: #dcc9e1;
+}
+
+html[data-theme='signal'] .detail-page-kicker,
+html[data-theme='signal'] .ghost-button,
+html[data-theme='signal'] .secondary-button {
+  background: rgba(42, 18, 50, 0.9);
+  color: #f6e8f8;
+}
+
+html[data-theme='signal'] .ghost-button:hover,
+html[data-theme='signal'] .secondary-button:hover {
+  border-color: rgba(255, 192, 77, 0.24);
+  color: #fff6f1;
+}
+
 html[data-theme='signal'] input,
 html[data-theme='signal'] textarea {
   border-color: rgba(255, 147, 117, 0.18);
