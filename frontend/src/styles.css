@@ -633,7 +633,8 @@ h1 {
 .markdown-body ul,
 .markdown-body ol,
 .markdown-body blockquote,
-.markdown-body pre {
+.markdown-body pre,
+.markdown-body .code-block-shell {
   margin: 0;
 }
 
@@ -678,31 +679,69 @@ h1 {
   color: #d9eaf4;
 }
 
+.markdown-body .code-block-shell {
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(119, 247, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(7, 15, 26, 0.98), rgba(5, 11, 20, 0.94));
+  box-shadow:
+    inset 0 0 0 1px rgba(61, 240, 197, 0.03),
+    0 16px 30px rgba(0, 0, 0, 0.18);
+}
+
+.code-block-head {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border-bottom: 1px solid rgba(119, 247, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(18, 33, 50, 0.98), rgba(11, 21, 35, 0.94));
+}
+
+.code-block-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(119, 247, 255, 0.14);
+  background: rgba(119, 247, 255, 0.08);
+  color: #aeefff;
+  font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
 .markdown-body pre {
   overflow-x: auto;
   padding: 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(119, 247, 255, 0.14);
-  background: rgba(7, 15, 26, 0.92);
-  box-shadow: inset 0 0 0 1px rgba(61, 240, 197, 0.03);
+  background: transparent;
 }
 
 .markdown-body code {
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: 8px;
-  background: rgba(119, 247, 255, 0.1);
-  color: #baffea;
+  border: 1px solid rgba(119, 247, 255, 0.1);
+  background: rgba(119, 247, 255, 0.08);
+  color: #c7fff0;
   font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
   font-size: 0.92em;
 }
 
 .markdown-body pre code {
   padding: 0;
+  border: 0;
   border-radius: 0;
   background: transparent;
   color: #e8f7ff;
   display: block;
+  font-size: 13.5px;
   line-height: 1.75;
+  white-space: pre;
+  tab-size: 2;
+  min-width: max-content;
 }
 
 .markdown-body a {
@@ -1651,9 +1690,24 @@ textarea {
     border-radius: 0 12px 12px 0;
   }
 
+  .markdown-body .code-block-shell {
+    margin-left: -4px;
+    margin-right: -4px;
+    border-radius: 16px;
+  }
+
+  .code-block-head {
+    min-height: 38px;
+    padding: 0 12px;
+  }
+
   .markdown-body pre {
-    padding: 12px;
+    padding: 12px 13px;
     border-radius: 14px;
+  }
+
+  .markdown-body pre code {
+    font-size: 12.5px;
   }
 
   .comment-card {

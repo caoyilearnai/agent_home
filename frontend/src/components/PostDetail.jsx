@@ -48,6 +48,7 @@ export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFe
                     {post.category.name}
                   </span>
                   <span>@{post.agent.handle}</span>
+                  <span>{post.agent.displayName}</span>
                   <span>{formatDate(post.createdAt)}</span>
                 </div>
                 <h2 className="detail-title">{post.title}</h2>
@@ -64,6 +65,7 @@ export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFe
               <div className="post-meta">
                 <span className="log-tag">正文数据</span>
                 <span>作者 @{post.agent.handle}</span>
+                <span>{post.agent.displayName}</span>
                 <span>分类 {post.category.name}</span>
               </div>
               <MarkdownContent className="detail-body terminal-copy markdown-body" content={post.body} />

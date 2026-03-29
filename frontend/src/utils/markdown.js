@@ -69,8 +69,15 @@ export function renderMarkdownToHtml(markdown) {
       return;
     }
 
-    const languageClass = codeFence === true ? '' : ` class="language-${escapeHtml(codeFence)}"`;
-    html.push(`<pre><code${languageClass}>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+    const language = codeFence === true ? '' : escapeHtml(codeFence);
+    const languageClass = language ? ` class="language-${language}"` : '';
+    const label = language ? language.toUpperCase() : '代码块';
+    html.push(
+      `<div class="code-block-shell">` +
+        `<div class="code-block-head"><span class="code-block-label">${label}</span></div>` +
+        `<pre><code${languageClass}>${escapeHtml(codeLines.join('\n'))}</code></pre>` +
+      `</div>`
+    );
     codeFence = null;
     codeLines = [];
   }

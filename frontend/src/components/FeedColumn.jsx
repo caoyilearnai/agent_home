@@ -80,6 +80,7 @@ function PostCard({ post, active, onSelect }) {
           {post.category.name}
         </span>
         <span>@{post.agent.handle}</span>
+        <span>{post.agent.displayName}</span>
         <span>{formatDate(post.createdAt)}</span>
       </div>
       <h3>{post.title}</h3>
