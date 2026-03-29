@@ -1,4 +1,27 @@
 function createAgentService({ db, agentRepository, nowIso, makeBindCode, makeToken }) {
+  const FORUM_SKILL_KEY = 'agent-home-forum';
+
+  function buildSkillCapabilitySummary(agent) {
+    return {
+      canCreatePosts: true,
+      canCreateComments: true,
+      canLike: true,
+      watchFeeds: ['new', 'hot'],
+      pollLimit: agent.rules.pollLimit,
+      subscribedCategoryIds: agent.rules.subscribedCategoryIds,
+      watchNewPosts: agent.rules.watchNewPosts,
+      watchHotPosts: agent.rules.watchHotPosts
+    };
+  }
+
+  function buildSkillInstallPayload(install, agent, credential) {
+    return {
+      ...install,
+      agent,
+      credential
+    };
+  }
+
   function logActivity(agentId, actionType, entityType, entityId, summary) {
     agentRepository.insertActivity({
       agentId,
@@ -93,6 +116,115 @@ function createAgentService({ db, agentRepository, nowIso, makeBindCode, makeTok
     return updated;
   }
 
+  function installForumSkill(agentId, payload) {
+    const agent = agentRepository.getAgentWithRules(agentId);
+    if (!agent) {
+      return { error: 'Agent 不存在。', status: 404 };
+    }
+    if (agent.status !== 'active') {
+      return { error: 'Agent 已被暂停。', status: 403 };
+    }
+
+    const credential = agentRepository.getAgentCredential(agentId);
+    if (!credential) {
+      return { error: 'Agent 凭证不存在。', status: 409 };
+    }
+
+    const runtimeAgentKey = payload.runtimeAgentKey?.trim() || null;
+    const installLabel = payload.installLabel?.trim() || 'Agent Home 论坛技能';
+    const capabilitySummary = buildSkillCapabilitySummary(agent);
+    const existingInstall = agentRepository.getSkillInstallByAgentId(agentId, FORUM_SKILL_KEY);
+
+    if (runtimeAgentKey) {
+      const installByRuntimeKey = agentRepository.getSkillInstallByRuntimeAgentKey(FORUM_SKILL_KEY, runtimeAgentKey);
+      if (installByRuntimeKey && installByRuntimeKey.agentId !== agentId) {
+        return { error: 'runtimeAgentKey 已被其他 Agent 使用。', status: 409 };
+      }
+    }
+
+    const timestamp = nowIso();
+
+    if (!existingInstall) {
+      const createdInstall = agentRepository.insertSkillInstall({
+        agentId,
+        skillKey: FORUM_SKILL_KEY,
+        installToken: makeToken('skl'),
+        runtimeAgentKey,
+        installLabel,
+        forumBaseUrl: payload.forumBaseUrl,
+        capabilitySummary,
+        installedAt: timestamp
+      });
+
+      logActivity(agentId, 'skill_install', 'skill', createdInstall.id, '安装了 Agent Home 论坛技能。');
+      return {
+        item: buildSkillInstallPayload(createdInstall, agent, credential)
+      };
+    }
+
+    agentRepository.updateSkillInstall(existingInstall.id, {
+      runtimeAgentKey,
+      installLabel,
+      forumBaseUrl: payload.forumBaseUrl,
+      capabilitySummary,
+      lastSyncedAt: timestamp
+    });
+
+    const updatedInstall = agentRepository.getSkillInstallByAgentId(agentId, FORUM_SKILL_KEY);
+    logActivity(agentId, 'skill_install', 'skill', updatedInstall.id, '更新了 Agent Home 论坛技能安装态。');
+    return {
+      item: buildSkillInstallPayload(updatedInstall, agent, credential)
+    };
+  }
+
+  function syncForumSkill(payload) {
+    const installToken = payload.installToken?.trim();
+    const runtimeAgentKey = payload.runtimeAgentKey?.trim();
+    const skillKey = payload.skillKey || FORUM_SKILL_KEY;
+
+    if (!installToken && !runtimeAgentKey) {
+      return { error: 'installToken 和 runtimeAgentKey 至少需要提供一个。', status: 400 };
+    }
+
+    const install = installToken
+      ? agentRepository.getSkillInstallByInstallToken(skillKey, installToken)
+      : agentRepository.getSkillInstallByRuntimeAgentKey(skillKey, runtimeAgentKey);
+
+    if (!install) {
+      return { error: '未找到已安装的 Skill 记录。', status: 404 };
+    }
+    if (install.status !== 'installed') {
+      return { error: 'Skill 安装记录已失效。', status: 410 };
+    }
+
+    const agent = agentRepository.getAgentWithRules(install.agentId);
+    const credential = agentRepository.getAgentCredential(install.agentId);
+
+    if (!agent || !credential) {
+      return { error: '安装记录对应的 Agent 已失效。', status: 410 };
+    }
+    if (agent.status !== 'active') {
+      return { error: 'Agent 已被暂停。', status: 403 };
+    }
+
+    agentRepository.touchSkillInstallSynced(install.id, nowIso());
+    const updatedInstall = agentRepository.getSkillInstallByAgentId(install.agentId, skillKey);
+    return {
+      item: buildSkillInstallPayload(updatedInstall, agent, credential)
+    };
+  }
+
+  function revokeForumSkill(agentId) {
+    const install = agentRepository.getSkillInstallByAgentId(agentId, FORUM_SKILL_KEY);
+    if (!install) {
+      return { ok: true };
+    }
+
+    agentRepository.revokeSkillInstall(install.id, nowIso());
+    logActivity(agentId, 'skill_revoke', 'skill', install.id, '撤销了 Agent Home 论坛技能安装态。');
+    return { ok: true };
+  }
+
   return {
     createBindRequest,
     exchangeBindCode,
@@ -101,8 +233,12 @@ function createAgentService({ db, agentRepository, nowIso, makeBindCode, makeTok
     getAgentRule: agentRepository.getAgentRule,
     getAgentWithRules: agentRepository.getAgentWithRules,
     getAgentsForUser: agentRepository.getAgentsForUser,
+    installForumSkill,
     logActivity,
+    revokeForumSkill,
+    skillKey: FORUM_SKILL_KEY,
     suspendAgent: agentRepository.suspendAgent,
+    syncForumSkill,
     updateAgentRules
   };
 }

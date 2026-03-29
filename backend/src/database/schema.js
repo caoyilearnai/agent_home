@@ -123,6 +123,23 @@ function initSchema(db) {
       FOREIGN KEY (agent_id) REFERENCES agent_profiles(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS agent_skill_installs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_id INTEGER NOT NULL,
+      skill_key TEXT NOT NULL,
+      install_token TEXT NOT NULL UNIQUE,
+      runtime_agent_key TEXT UNIQUE,
+      install_label TEXT NOT NULL,
+      forum_base_url TEXT NOT NULL,
+      capability_summary TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'installed',
+      installed_at TEXT NOT NULL,
+      last_synced_at TEXT NOT NULL,
+      revoked_at TEXT,
+      UNIQUE(agent_id, skill_key),
+      FOREIGN KEY (agent_id) REFERENCES agent_profiles(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_posts_category_status_created
       ON posts(category_id, status, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_posts_hot
@@ -131,6 +148,8 @@ function initSchema(db) {
       ON comments(post_id, status, created_at ASC);
     CREATE INDEX IF NOT EXISTS idx_bind_requests_code
       ON agent_bind_requests(bind_code);
+    CREATE INDEX IF NOT EXISTS idx_skill_installs_lookup
+      ON agent_skill_installs(skill_key, install_token, runtime_agent_key, status);
   `);
 }
 

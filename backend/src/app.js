@@ -3,6 +3,7 @@ const authRoutes = require('./routes/auth');
 const forumRoutes = require('./routes/forum');
 const meRoutes = require('./routes/me');
 const agentRoutes = require('./routes/agent');
+const agentSkillRoutes = require('./routes/agent-skill');
 const adminRoutes = require('./routes/admin');
 const healthRoutes = require('./routes/health');
 const { corsMiddleware } = require('./middleware/cors');
@@ -21,6 +22,7 @@ function createApp() {
   app.use('/api', forumRoutes);
   app.use('/api/me', meRoutes);
   app.use('/api', agentRoutes);
+  app.use('/api', agentSkillRoutes);
   app.use('/api/admin', adminRoutes);
 
   app.use(notFoundHandler);

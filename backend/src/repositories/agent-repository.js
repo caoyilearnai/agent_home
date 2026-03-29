@@ -1,4 +1,25 @@
 function createAgentRepository({ db, nowIso, maskToken }) {
+  function mapSkillInstall(row) {
+    if (!row) {
+      return null;
+    }
+
+    return {
+      id: row.id,
+      agentId: row.agent_id,
+      skillKey: row.skill_key,
+      installToken: row.install_token,
+      runtimeAgentKey: row.runtime_agent_key,
+      installLabel: row.install_label,
+      forumBaseUrl: row.forum_base_url,
+      capabilitySummary: JSON.parse(row.capability_summary || '{}'),
+      status: row.status,
+      installedAt: row.installed_at,
+      lastSyncedAt: row.last_synced_at,
+      revokedAt: row.revoked_at
+    };
+  }
+
   function createBindRequest(userId, payload, bindCode, expiresAt) {
     db.prepare(`
       INSERT INTO agent_bind_requests (
@@ -82,6 +103,24 @@ function createAgentRepository({ db, nowIso, maskToken }) {
       JOIN agent_profiles a ON a.id = c.agent_id
       WHERE c.token = ?
     `).get(token);
+  }
+
+  function getAgentCredential(agentId) {
+    const row = db.prepare(`
+      SELECT token, label
+      FROM agent_credentials
+      WHERE agent_id = ?
+    `).get(agentId);
+
+    if (!row) {
+      return null;
+    }
+
+    return {
+      token: row.token,
+      label: row.label,
+      maskedToken: maskToken(row.token)
+    };
   }
 
   function getAgentWithRules(agentId) {
@@ -196,6 +235,99 @@ function createAgentRepository({ db, nowIso, maskToken }) {
     `).run(agentId);
   }
 
+  function getSkillInstallByAgentId(agentId, skillKey) {
+    const row = db.prepare(`
+      SELECT *
+      FROM agent_skill_installs
+      WHERE agent_id = ? AND skill_key = ?
+    `).get(agentId, skillKey);
+
+    return mapSkillInstall(row);
+  }
+
+  function getSkillInstallByInstallToken(skillKey, installToken) {
+    const row = db.prepare(`
+      SELECT *
+      FROM agent_skill_installs
+      WHERE skill_key = ? AND install_token = ?
+    `).get(skillKey, installToken);
+
+    return mapSkillInstall(row);
+  }
+
+  function getSkillInstallByRuntimeAgentKey(skillKey, runtimeAgentKey) {
+    const row = db.prepare(`
+      SELECT *
+      FROM agent_skill_installs
+      WHERE skill_key = ? AND runtime_agent_key = ?
+    `).get(skillKey, runtimeAgentKey);
+
+    return mapSkillInstall(row);
+  }
+
+  function insertSkillInstall({
+    agentId,
+    skillKey,
+    installToken,
+    runtimeAgentKey,
+    installLabel,
+    forumBaseUrl,
+    capabilitySummary,
+    installedAt
+  }) {
+    db.prepare(`
+      INSERT INTO agent_skill_installs (
+        agent_id, skill_key, install_token, runtime_agent_key, install_label,
+        forum_base_url, capability_summary, status, installed_at, last_synced_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'installed', ?, ?)
+    `).run(
+      agentId,
+      skillKey,
+      installToken,
+      runtimeAgentKey || null,
+      installLabel,
+      forumBaseUrl,
+      JSON.stringify(capabilitySummary),
+      installedAt,
+      installedAt
+    );
+
+    return getSkillInstallByAgentId(agentId, skillKey);
+  }
+
+  function updateSkillInstall(installId, payload) {
+    db.prepare(`
+      UPDATE agent_skill_installs
+      SET runtime_agent_key = ?, install_label = ?, forum_base_url = ?, capability_summary = ?,
+          status = 'installed', last_synced_at = ?, revoked_at = NULL
+      WHERE id = ?
+    `).run(
+      payload.runtimeAgentKey || null,
+      payload.installLabel,
+      payload.forumBaseUrl,
+      JSON.stringify(payload.capabilitySummary),
+      payload.lastSyncedAt,
+      installId
+    );
+  }
+
+  function touchSkillInstallSynced(installId, syncedAt) {
+    db.prepare(`
+      UPDATE agent_skill_installs
+      SET last_synced_at = ?
+      WHERE id = ?
+    `).run(syncedAt, installId);
+  }
+
+  function revokeSkillInstall(installId, revokedAt) {
+    db.prepare(`
+      UPDATE agent_skill_installs
+      SET status = 'revoked', revoked_at = ?, last_synced_at = ?
+      WHERE id = ?
+    `).run(revokedAt, revokedAt, installId);
+  }
+
   function insertSeedAgentProfile({ userId, handle, displayName, persona, createdAt }) {
     return db.prepare(`
       INSERT INTO agent_profiles (user_id, handle, display_name, persona, status, created_at)
@@ -208,17 +340,25 @@ function createAgentRepository({ db, nowIso, maskToken }) {
     createBindRequest,
     getActivitiesForAgent,
     getAgentByToken,
+    getAgentCredential,
     getAgentHandleConflict,
     getAgentRule,
     getAgentsForUser,
     getAgentWithRules,
     getBindRequestByCode,
+    getSkillInstallByAgentId,
+    getSkillInstallByInstallToken,
+    getSkillInstallByRuntimeAgentKey,
     insertActivity,
     insertAgentCredential,
     insertAgentProfile,
     insertAgentRule,
+    insertSkillInstall,
     insertSeedAgentProfile,
+    revokeSkillInstall,
     suspendAgent,
+    touchSkillInstallSynced,
+    updateSkillInstall,
     updateAgentRules
   };
 }

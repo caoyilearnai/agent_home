@@ -60,6 +60,7 @@ test('Agent Home backend API integration', async (t) => {
   let viewerToken;
   let adminToken;
   let agentToken;
+  let skillInstallToken;
   let createdAgentId;
   let createdPostId;
   let createdCommentId;
@@ -297,6 +298,83 @@ test('Agent Home backend API integration', async (t) => {
     assert.equal(activities.status, 200);
     assert.ok(activities.json.items.some((item) => item.actionType === 'bind'));
     assert.ok(activities.json.items.some((item) => item.actionType === 'rules'));
+  });
+
+  await t.test('installs, syncs, and revokes the forum skill state', async () => {
+    const install = await apiRequest('/api/agent-skill/install', {
+      method: 'POST',
+      token: agentToken,
+      body: {
+        runtimeAgentKey: 'casey-runtime-agent',
+        installLabel: 'Casey Forum Skill'
+      }
+    });
+
+    assert.equal(install.status, 201);
+    assert.equal(install.json.item.skillKey, 'agent-home-forum');
+    assert.equal(install.json.item.runtimeAgentKey, 'casey-runtime-agent');
+    assert.equal(install.json.item.installLabel, 'Casey Forum Skill');
+    assert.equal(install.json.item.agent.id, createdAgentId);
+    assert.equal(install.json.item.credential.token, agentToken);
+    assert.equal(install.json.item.capabilitySummary.canCreatePosts, true);
+    skillInstallToken = install.json.item.installToken;
+    assert.ok(skillInstallToken);
+
+    const syncByRuntimeKey = await apiRequest('/api/agent-skill/sync', {
+      method: 'POST',
+      body: {
+        skillKey: 'agent-home-forum',
+        runtimeAgentKey: 'casey-runtime-agent'
+      }
+    });
+
+    assert.equal(syncByRuntimeKey.status, 200);
+    assert.equal(syncByRuntimeKey.json.item.credential.token, agentToken);
+    assert.equal(syncByRuntimeKey.json.item.agent.id, createdAgentId);
+
+    const syncByInstallToken = await apiRequest('/api/agent-skill/sync', {
+      method: 'POST',
+      body: {
+        skillKey: 'agent-home-forum',
+        installToken: skillInstallToken
+      }
+    });
+
+    assert.equal(syncByInstallToken.status, 200);
+    assert.equal(syncByInstallToken.json.item.installToken, skillInstallToken);
+
+    const revoke = await apiRequest('/api/agent-skill/revoke', {
+      method: 'POST',
+      token: viewerToken,
+      body: {
+        agentId: createdAgentId
+      }
+    });
+
+    assert.equal(revoke.status, 200);
+    assert.equal(revoke.json.ok, true);
+
+    const syncAfterRevoke = await apiRequest('/api/agent-skill/sync', {
+      method: 'POST',
+      body: {
+        installToken: skillInstallToken
+      }
+    });
+
+    assert.equal(syncAfterRevoke.status, 410);
+    assert.equal(syncAfterRevoke.json.error, 'Skill 安装记录已失效。');
+
+    const reinstall = await apiRequest('/api/agent-skill/install', {
+      method: 'POST',
+      token: agentToken,
+      body: {
+        runtimeAgentKey: 'casey-runtime-agent',
+        installLabel: 'Casey Forum Skill'
+      }
+    });
+
+    assert.equal(reinstall.status, 201);
+    assert.equal(reinstall.json.item.installToken, skillInstallToken);
   });
 
   await t.test('allows the agent to read feed and create post, comment, and like', async () => {
