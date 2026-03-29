@@ -10,13 +10,46 @@ function escapeHtml(value) {
 function renderInline(value) {
   let html = escapeHtml(value);
 
+  html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" />');
+  html = html.replace(/&lt;(https?:\/\/[^&\s]+)&gt;/g, '<a href="$1" target="_blank" rel="noreferrer">$1</a>');
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
   html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
   html = html.replace(/(^|[^\*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+  html = html.replace(/(^|[^_])_([^_\n]+)_/g, '$1<em>$2</em>');
   html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
 
   return html;
+}
+
+function splitTableRow(line) {
+  return line
+    .trim()
+    .replace(/^\|/, '')
+    .replace(/\|$/, '')
+    .split('|')
+    .map((cell) => cell.trim());
+}
+
+function isTableDivider(line) {
+  const cells = splitTableRow(line);
+  return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+}
+
+function getTableAlignments(line) {
+  return splitTableRow(line).map((cell) => {
+    if (/^:-{3,}:$/.test(cell)) {
+      return 'center';
+    }
+    if (/^-{3,}:$/.test(cell)) {
+      return 'right';
+    }
+    if (/^:-{3,}$/.test(cell)) {
+      return 'left';
+    }
+    return null;
+  });
 }
 
 export function renderMarkdownToHtml(markdown) {
@@ -34,6 +67,9 @@ export function renderMarkdownToHtml(markdown) {
   let listType = null;
   let listItems = [];
   let quoteLines = [];
+  let tableHeaders = [];
+  let tableAlignments = [];
+  let tableRows = [];
 
   function flushParagraph() {
     if (!paragraph.length) {
@@ -50,7 +86,17 @@ export function renderMarkdownToHtml(markdown) {
     }
 
     const tag = listType === 'ol' ? 'ol' : 'ul';
-    html.push(`<${tag}>${listItems.map((item) => `<li>${renderInline(item)}</li>`).join('')}</${tag}>`);
+    const listClass = listItems.some((item) => item.checked !== null) ? ' class="task-list"' : '';
+    const listHtml = listItems.map((item) => {
+      if (item.checked === null) {
+        return `<li>${renderInline(item.text)}</li>`;
+      }
+
+      const checkedAttribute = item.checked ? ' checked' : '';
+      return `<li class="task-list-item"><input type="checkbox" disabled${checkedAttribute} /><span>${renderInline(item.text)}</span></li>`;
+    }).join('');
+
+    html.push(`<${tag}${listClass}>${listHtml}</${tag}>`);
     listType = null;
     listItems = [];
   }
@@ -62,6 +108,28 @@ export function renderMarkdownToHtml(markdown) {
 
     html.push(`<blockquote>${quoteLines.map(renderInline).join('<br />')}</blockquote>`);
     quoteLines = [];
+  }
+
+  function flushTable() {
+    if (!tableHeaders.length) {
+      return;
+    }
+
+    const buildAlignedCell = (tag, cell, index) => {
+      const alignment = tableAlignments[index];
+      const alignAttribute = alignment ? ` style="text-align:${alignment}"` : '';
+      return `<${tag}${alignAttribute}>${renderInline(cell)}</${tag}>`;
+    };
+
+    const headHtml = `<thead><tr>${tableHeaders.map((cell, index) => buildAlignedCell('th', cell, index)).join('')}</tr></thead>`;
+    const bodyHtml = tableRows.length
+      ? `<tbody>${tableRows.map((row) => `<tr>${row.map((cell, index) => buildAlignedCell('td', cell, index)).join('')}</tr>`).join('')}</tbody>`
+      : '';
+
+    html.push(`<div class="table-shell"><table>${headHtml}${bodyHtml}</table></div>`);
+    tableHeaders = [];
+    tableAlignments = [];
+    tableRows = [];
   }
 
   function flushCodeFence() {
@@ -82,18 +150,20 @@ export function renderMarkdownToHtml(markdown) {
     codeLines = [];
   }
 
-  for (const line of lines) {
-    const fenceMatch = line.match(/^```(\w+)?\s*$/);
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const fenceMatch = line.match(/^(```|~~~)([\w#+.-]+)?\s*$/);
 
     if (fenceMatch) {
       flushParagraph();
       flushList();
       flushQuote();
+      flushTable();
 
       if (codeFence) {
         flushCodeFence();
       } else {
-        codeFence = fenceMatch[1] || true;
+        codeFence = fenceMatch[2] || true;
       }
 
       continue;
@@ -108,6 +178,7 @@ export function renderMarkdownToHtml(markdown) {
       flushParagraph();
       flushList();
       flushQuote();
+      flushTable();
       continue;
     }
 
@@ -116,8 +187,18 @@ export function renderMarkdownToHtml(markdown) {
       flushParagraph();
       flushList();
       flushQuote();
+      flushTable();
       const level = headingMatch[1].length;
       html.push(`<h${level}>${renderInline(headingMatch[2].trim())}</h${level}>`);
+      continue;
+    }
+
+    if (/^ {0,3}([-*_])(?:\s*\1){2,}\s*$/.test(line)) {
+      flushParagraph();
+      flushList();
+      flushQuote();
+      flushTable();
+      html.push('<hr />');
       continue;
     }
 
@@ -125,6 +206,7 @@ export function renderMarkdownToHtml(markdown) {
     if (quoteMatch) {
       flushParagraph();
       flushList();
+      flushTable();
       quoteLines.push(quoteMatch[1]);
       continue;
     }
@@ -133,11 +215,15 @@ export function renderMarkdownToHtml(markdown) {
     if (orderedMatch) {
       flushParagraph();
       flushQuote();
+      flushTable();
       if (listType && listType !== 'ol') {
         flushList();
       }
       listType = 'ol';
-      listItems.push(orderedMatch[1]);
+      listItems.push({
+        text: orderedMatch[1],
+        checked: null
+      });
       continue;
     }
 
@@ -145,22 +231,60 @@ export function renderMarkdownToHtml(markdown) {
     if (unorderedMatch) {
       flushParagraph();
       flushQuote();
+      flushTable();
       if (listType && listType !== 'ul') {
         flushList();
       }
       listType = 'ul';
-      listItems.push(unorderedMatch[1]);
+      const taskMatch = unorderedMatch[1].match(/^\[( |x|X)\]\s+(.+)$/);
+      listItems.push({
+        text: taskMatch ? taskMatch[2] : unorderedMatch[1],
+        checked: taskMatch ? /[xX]/.test(taskMatch[1]) : null
+      });
+      continue;
+    }
+
+    const nextLine = lines[index + 1];
+    if (line.includes('|') && nextLine && isTableDivider(nextLine)) {
+      flushParagraph();
+      flushList();
+      flushQuote();
+      flushTable();
+
+      tableHeaders = splitTableRow(line);
+      tableAlignments = getTableAlignments(nextLine);
+      tableRows = [];
+      index += 1;
+
+      while (index + 1 < lines.length) {
+        const candidateLine = lines[index + 1];
+        if (!candidateLine.trim() || !candidateLine.includes('|')) {
+          break;
+        }
+
+        const cells = splitTableRow(candidateLine);
+        if (!cells.length) {
+          break;
+        }
+
+        tableRows.push(cells);
+        index += 1;
+      }
+
+      flushTable();
       continue;
     }
 
     flushList();
     flushQuote();
+    flushTable();
     paragraph.push(line.trim());
   }
 
   flushParagraph();
   flushList();
   flushQuote();
+  flushTable();
   flushCodeFence();
 
   return html.join('');
@@ -169,7 +293,10 @@ export function renderMarkdownToHtml(markdown) {
 export function markdownToExcerpt(markdown, limit = 180) {
   const source = String(markdown || '')
     .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/~~~[\s\S]*?~~~/g, ' ')
+    .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '$1')
     .replace(/`([^`]+)`/g, '$1')
+    .replace(/<(https?:\/\/[^>\s]+)>/g, '$1')
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$1')
     .replace(/[*_~>#-]/g, ' ')
     .replace(/\s+/g, ' ')
