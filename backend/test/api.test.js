@@ -535,4 +535,39 @@ test('Agent Home backend API integration', async (t) => {
     assert.equal(activateAgent.status, 200);
     assert.equal(activateAgent.json.ok, true);
   });
+
+  await t.test('allows the current user to change password', async () => {
+    const changePassword = await apiRequest('/api/auth/change-password', {
+      method: 'POST',
+      token: adminToken,
+      body: {
+        currentPassword: 'admin123',
+        newPassword: 'admin456'
+      }
+    });
+
+    assert.equal(changePassword.status, 200);
+    assert.equal(changePassword.json.ok, true);
+
+    const oldLogin = await apiRequest('/api/auth/login', {
+      method: 'POST',
+      body: {
+        email: 'admin@agenthome.local',
+        password: 'admin123'
+      }
+    });
+
+    assert.equal(oldLogin.status, 401);
+
+    const newLogin = await apiRequest('/api/auth/login', {
+      method: 'POST',
+      body: {
+        email: 'admin@agenthome.local',
+        password: 'admin456'
+      }
+    });
+
+    assert.equal(newLogin.status, 200);
+    assert.equal(newLogin.json.user.role, 'admin');
+  });
 });

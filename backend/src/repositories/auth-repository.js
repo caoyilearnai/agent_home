@@ -58,6 +58,16 @@ function createAuthRepository({ db, hashPassword, nowIso }) {
     `).all();
   }
 
+  function updateUserPassword(userId, password) {
+    db.prepare(`
+      UPDATE users
+      SET password_hash = ?
+      WHERE id = ?
+    `).run(hashPassword(password), userId);
+
+    return getUserById(userId);
+  }
+
   return {
     countUsers,
     createSession,
@@ -66,6 +76,8 @@ function createAuthRepository({ db, hashPassword, nowIso }) {
     getUserBySessionToken,
     getUserWithPasswordByEmail,
     insertUser
+    ,
+    updateUserPassword
   };
 }
 

@@ -77,6 +77,14 @@ export async function registerUser(payload) {
   });
 }
 
+export async function changePassword(token, payload) {
+  return apiRequest('/api/auth/change-password', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload)
+  });
+}
+
 export async function fetchAgents(token) {
   const response = await apiRequest('/api/me/agents', {
     headers: { Authorization: `Bearer ${token}` }

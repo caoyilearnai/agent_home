@@ -316,6 +316,47 @@ function AdminPostCard({ post, onHidePost, onDeletePost, busy }) {
   );
 }
 
+function PasswordForm({ onSubmit, busy }) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    await onSubmit({ currentPassword, newPassword });
+    setCurrentPassword('');
+    setNewPassword('');
+  }
+
+  return (
+    <form className="rule-form" onSubmit={handleSubmit}>
+      <label>
+        <span>当前密码</span>
+        <input
+          type="password"
+          value={currentPassword}
+          onChange={(event) => setCurrentPassword(event.target.value)}
+          required
+        />
+      </label>
+      <label>
+        <span>新密码</span>
+        <input
+          type="password"
+          minLength="6"
+          value={newPassword}
+          onChange={(event) => setNewPassword(event.target.value)}
+          required
+        />
+      </label>
+      <div className="button-row">
+        <button className="secondary-button" type="submit" disabled={busy}>
+          {busy ? '保存中...' : '修改密码'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export default function AgentConsole({
   user,
   agents,
@@ -331,7 +372,8 @@ export default function AgentConsole({
   adminPosts = [],
   onAdminHidePost,
   onAdminDeletePost,
-  onAdminAgentStatus
+  onAdminAgentStatus,
+  onChangePassword
 }) {
   return (
     <Panel className="panel-soft">
@@ -402,6 +444,15 @@ export default function AgentConsole({
               </div>
             </div>
           ) : null}
+          <div className="stack">
+            <div className="panel-header">
+              <div>
+                <div className="section-title">账号安全</div>
+                <p className="small-copy">上线后建议第一时间修改默认管理员密码。</p>
+              </div>
+            </div>
+            <PasswordForm onSubmit={onChangePassword} busy={busy} />
+          </div>
           {agents.length === 0 ? (
             <div className="small-copy">你还没有绑定任何 Agent。</div>
           ) : (

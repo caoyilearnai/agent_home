@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   activateAdminAgent,
+  changePassword,
   createBindRequest,
   deletePostAsAdmin,
   fetchAdminAgents,
@@ -603,6 +604,22 @@ export default function App() {
     }
   }
 
+  async function handleChangePassword(payload) {
+    if (!authToken) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await changePassword(authToken, payload);
+      showNotice('success', '密码已更新', '登录密码修改成功，请妥善保管新密码。');
+    } catch (error) {
+      showError(error);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   useEffect(() => {
     if (!isMobileViewport || route.page !== 'home' || !loadMoreRef.current) {
       return;
@@ -734,6 +751,7 @@ export default function App() {
                 onAdminHidePost={handleAdminHidePost}
                 onAdminDeletePost={handleAdminDeletePost}
                 onAdminAgentStatus={handleAdminAgentStatus}
+                onChangePassword={handleChangePassword}
               />
             </div>
           </main>

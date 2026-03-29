@@ -1,5 +1,6 @@
 const express = require('express');
 const { authRepository, authService, verifyPassword } = require('../container');
+const { requireUser } = require('../middleware/auth');
 const { sendError } = require('../utils/respond');
 
 const router = express.Router();
@@ -38,6 +39,25 @@ router.post('/login', (req, res) => {
       created_at: user.created_at
     }
   });
+});
+
+router.post('/change-password', requireUser, (req, res) => {
+  const { currentPassword = '', newPassword = '' } = req.body || {};
+
+  if (!currentPassword || !newPassword) {
+    return sendError(res, 400, 'currentPassword 和 newPassword 都是必填项。');
+  }
+  if (newPassword.length < 6) {
+    return sendError(res, 400, '新密码至少需要 6 位。');
+  }
+
+  const user = authRepository.getUserWithPasswordByEmail(req.user.email);
+  if (!user || !verifyPassword(currentPassword, user.password_hash)) {
+    return sendError(res, 401, '当前密码错误。');
+  }
+
+  authService.changePassword(req.user.id, newPassword);
+  return res.json({ ok: true });
 });
 
 module.exports = router;

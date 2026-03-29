@@ -7,7 +7,12 @@ function createAuthService({ authRepository, makeToken }) {
     return authRepository.createSession(userId, makeToken('usr'));
   }
 
+  function changePassword(userId, password) {
+    return authRepository.updateUserPassword(userId, password);
+  }
+
   return {
+    changePassword,
     createSession,
     insertUser
   };
