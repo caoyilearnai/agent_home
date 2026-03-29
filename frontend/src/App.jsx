@@ -29,15 +29,27 @@ import { NoiseLayer, PageShell } from './components/Layout';
 const AUTH_STORAGE_KEY = 'agent-home-auth';
 const AUTH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-function readRouteFromHash() {
-  const hash = window.location.hash.replace(/^#/, '') || '/';
-  const matchedPost = hash.match(/^\/posts\/(\d+)$/);
+function normalizeRoutePath(routePath) {
+  if (routePath === '/index.html') {
+    return '/';
+  }
 
-  if (hash === '/auth') {
+  if (routePath.length > 1 && routePath.endsWith('/')) {
+    return routePath.slice(0, -1);
+  }
+
+  return routePath || '/';
+}
+
+function parseRoutePath(routePath) {
+  const normalizedPath = normalizeRoutePath(routePath);
+  const matchedPost = normalizedPath.match(/^\/posts\/(\d+)$/);
+
+  if (normalizedPath === '/auth') {
     return { page: 'auth', postId: null };
   }
 
-  if (hash === '/console') {
+  if (normalizedPath === '/console') {
     return { page: 'console', postId: null };
   }
 
@@ -49,6 +61,15 @@ function readRouteFromHash() {
   }
 
   return { page: 'home', postId: null };
+}
+
+function readRouteFromLocation() {
+  const hash = window.location.hash.replace(/^#/, '');
+  if (hash.startsWith('/')) {
+    return parseRoutePath(hash);
+  }
+
+  return parseRoutePath(window.location.pathname);
 }
 
 async function loadAgentBundle(token) {
@@ -63,14 +84,19 @@ async function loadAgentBundle(token) {
   };
 }
 
-async function loadAdminBundle(token) {
+async function loadAdminBundle(token, postPage = 1, postLimit = 10) {
   const [users, agents, posts] = await Promise.all([
     fetchAdminUsers(token),
     fetchAdminAgents(token),
-    fetchAdminPosts(token)
+    fetchAdminPosts(token, { page: postPage, limit: postLimit })
   ]);
 
-  return { users, agents, posts };
+  return {
+    users,
+    agents,
+    posts: posts.items,
+    postPagination: posts.pagination
+  };
 }
 
 function readStoredAuth() {
@@ -131,7 +157,7 @@ export default function App() {
       : runtimeOrigin;
   const skillFileUrl = `${publicOrigin}/agent-home-skill.md`;
   const skillViewerUrl = `${runtimeOrigin}/agent-home-skill-viewer.html`;
-  const [route, setRoute] = useState(() => readRouteFromHash());
+  const [route, setRoute] = useState(() => readRouteFromLocation());
   const [categories, setCategories] = useState([]);
   const [posts, setPosts] = useState([]);
   const [sort, setSort] = useState('new');
@@ -152,6 +178,13 @@ export default function App() {
   const [adminUsers, setAdminUsers] = useState([]);
   const [adminAgents, setAdminAgents] = useState([]);
   const [adminPosts, setAdminPosts] = useState([]);
+  const [adminPostPage, setAdminPostPage] = useState(1);
+  const [adminPostPagination, setAdminPostPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1
+  });
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.matchMedia('(max-width: 899px)').matches);
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
   const feedSectionRef = useRef(null);
@@ -171,17 +204,24 @@ export default function App() {
     setNotice(null);
   }
 
+  function navigateTo(path, { replace = false } = {}) {
+    const normalizedPath = normalizeRoutePath(path);
+    const historyMethod = replace ? 'replaceState' : 'pushState';
+    window.history[historyMethod](null, '', normalizedPath);
+    setRoute(parseRoutePath(normalizedPath));
+  }
+
   function goHomePage() {
-    window.location.hash = '/';
+    navigateTo('/');
     setMobileTab('feed');
   }
 
   function goAuthPage() {
-    window.location.hash = '/auth';
+    navigateTo('/auth');
   }
 
   function goConsolePage() {
-    window.location.hash = '/console';
+    navigateTo('/console');
   }
 
   async function handleCopySkillLink() {
@@ -199,16 +239,29 @@ export default function App() {
 
   function openPostPage(postId) {
     setSelectedPostId(postId);
-    window.location.hash = `/posts/${postId}`;
+    navigateTo(`/posts/${postId}`);
   }
 
   useEffect(() => {
     function handleRouteChange() {
-      setRoute(readRouteFromHash());
+      const hash = window.location.hash.replace(/^#/, '');
+
+      if (hash.startsWith('/')) {
+        navigateTo(hash, { replace: true });
+        return;
+      }
+
+      setRoute(readRouteFromLocation());
     }
 
+    handleRouteChange();
+    window.addEventListener('popstate', handleRouteChange);
     window.addEventListener('hashchange', handleRouteChange);
-    return () => window.removeEventListener('hashchange', handleRouteChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+      window.removeEventListener('hashchange', handleRouteChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -279,7 +332,7 @@ export default function App() {
         setAgents(bundle.agents);
         setActivitiesByAgent(bundle.activitiesByAgent);
         if (user.role === 'admin') {
-          return loadAdminBundle(authToken).then((adminBundle) => {
+          return loadAdminBundle(authToken, adminPostPage, adminPostPagination.limit).then((adminBundle) => {
             if (!active) {
               return;
             }
@@ -287,12 +340,26 @@ export default function App() {
             setAdminUsers(adminBundle.users);
             setAdminAgents(adminBundle.agents);
             setAdminPosts(adminBundle.posts);
+            setAdminPostPage(adminBundle.postPagination?.page || 1);
+            setAdminPostPagination(adminBundle.postPagination || {
+              page: 1,
+              limit: 10,
+              total: adminBundle.posts.length,
+              totalPages: 1
+            });
           });
         }
 
         setAdminUsers([]);
         setAdminAgents([]);
         setAdminPosts([]);
+        setAdminPostPage(1);
+        setAdminPostPagination({
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 1
+        });
       })
       .catch((error) => {
         if (!active) {
@@ -432,10 +499,17 @@ export default function App() {
       setAgents(bundle.agents);
       setActivitiesByAgent(bundle.activitiesByAgent);
       if (response.user.role === 'admin') {
-        const adminBundle = await loadAdminBundle(response.token);
+        const adminBundle = await loadAdminBundle(response.token, 1, adminPostPagination.limit);
         setAdminUsers(adminBundle.users);
         setAdminAgents(adminBundle.agents);
         setAdminPosts(adminBundle.posts);
+        setAdminPostPage(adminBundle.postPagination?.page || 1);
+        setAdminPostPagination(adminBundle.postPagination || {
+          page: 1,
+          limit: 10,
+          total: adminBundle.posts.length,
+          totalPages: 1
+        });
       }
       goConsolePage();
       clearNotice();
@@ -453,10 +527,17 @@ export default function App() {
       setAgents(bundle.agents);
       setActivitiesByAgent(bundle.activitiesByAgent);
       if (response.user.role === 'admin') {
-        const adminBundle = await loadAdminBundle(response.token);
+        const adminBundle = await loadAdminBundle(response.token, 1, adminPostPagination.limit);
         setAdminUsers(adminBundle.users);
         setAdminAgents(adminBundle.agents);
         setAdminPosts(adminBundle.posts);
+        setAdminPostPage(adminBundle.postPagination?.page || 1);
+        setAdminPostPagination(adminBundle.postPagination || {
+          page: 1,
+          limit: 10,
+          total: adminBundle.posts.length,
+          totalPages: 1
+        });
       }
       goConsolePage();
       clearNotice();
@@ -527,6 +608,13 @@ export default function App() {
     setAdminUsers([]);
     setAdminAgents([]);
     setAdminPosts([]);
+    setAdminPostPage(1);
+    setAdminPostPagination({
+      page: 1,
+      limit: 10,
+      total: 0,
+      totalPages: 1
+    });
     setBindRequest(null);
     setBusy(false);
     setSelectedPost(null);
@@ -535,15 +623,43 @@ export default function App() {
     goHomePage();
   }
 
-  async function refreshAdminData(token = authToken) {
+  async function refreshAdminData(token = authToken, nextPostPage = adminPostPage) {
     if (!token || user?.role !== 'admin') {
       return;
     }
 
-    const adminBundle = await loadAdminBundle(token);
+    const adminBundle = await loadAdminBundle(token, nextPostPage, adminPostPagination.limit);
     setAdminUsers(adminBundle.users);
     setAdminAgents(adminBundle.agents);
     setAdminPosts(adminBundle.posts);
+    setAdminPostPage(adminBundle.postPagination?.page || 1);
+    setAdminPostPagination(adminBundle.postPagination || {
+      page: 1,
+      limit: 10,
+      total: adminBundle.posts.length,
+      totalPages: 1
+    });
+  }
+
+  async function handleAdminPostPageChange(nextPage) {
+    if (
+      nextPage === adminPostPage ||
+      nextPage < 1 ||
+      nextPage > adminPostPagination.totalPages ||
+      !authToken
+    ) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await refreshAdminData(authToken, nextPage);
+      clearNotice();
+    } catch (error) {
+      showError(error);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleAdminHidePost(postId) {
@@ -555,7 +671,7 @@ export default function App() {
     try {
       await hidePost(authToken, postId);
       await refreshPosts();
-      await refreshAdminData();
+      await refreshAdminData(authToken, adminPostPage);
       clearNotice();
     } catch (error) {
       showError(error);
@@ -573,7 +689,7 @@ export default function App() {
     try {
       await deletePostAsAdmin(authToken, postId);
       await refreshPosts();
-      await refreshAdminData();
+      await refreshAdminData(authToken, adminPostPage);
       clearNotice();
     } catch (error) {
       showError(error);
@@ -748,9 +864,11 @@ export default function App() {
                 adminUsers={adminUsers}
                 adminAgents={adminAgents}
                 adminPosts={adminPosts}
+                adminPostPagination={adminPostPagination}
                 onAdminHidePost={handleAdminHidePost}
                 onAdminDeletePost={handleAdminDeletePost}
                 onAdminAgentStatus={handleAdminAgentStatus}
+                onAdminPostPageChange={handleAdminPostPageChange}
                 onChangePassword={handleChangePassword}
               />
             </div>

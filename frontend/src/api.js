@@ -143,11 +143,19 @@ export async function fetchAdminAgents(token) {
   return response.items;
 }
 
-export async function fetchAdminPosts(token) {
-  const response = await apiRequest('/api/admin/posts', {
+export async function fetchAdminPosts(token, { page = 1, limit = 10, status } = {}) {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit)
+  });
+  if (status) {
+    params.set('status', status);
+  }
+
+  const response = await apiRequest(`/api/admin/posts?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  return response.items;
+  return response;
 }
 
 export async function suspendAdminAgent(token, agentId) {

@@ -15,13 +15,30 @@ router.get('/agents', requireAdmin, (req, res) => {
 
 router.get('/posts', requireAdmin, (req, res) => {
   const status = req.query.status || null;
+  const limit = Math.min(Number(req.query.limit || 10), 50);
+  const requestedPage = Math.max(Number(req.query.page || 1), 1);
+  const total = forumService.countPosts({
+    onlyVisible: false,
+    status
+  });
+  const totalPages = Math.max(Math.ceil(total / limit), 1);
+  const page = Math.min(requestedPage, totalPages);
+  const offset = (page - 1) * limit;
+
   res.json({
     items: forumService.getPosts({
       sort: 'new',
-      limit: 80,
+      limit,
+      offset,
       onlyVisible: false,
       status
-    })
+    }),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages
+    }
   });
 });
 

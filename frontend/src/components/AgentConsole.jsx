@@ -289,22 +289,33 @@ function AdminAgentCard({ agent, onChangeStatus, busy }) {
 }
 
 function AdminPostCard({ post, onHidePost, onDeletePost, busy }) {
+  const postDetailUrl = `${window.location.origin}/posts/${post.id}`;
+
   return (
-    <article className="admin-card">
-      <div className="agent-meta">
-        <span>{post.status}</span>
-        <span>{post.category.name}</span>
-        <span>{formatDate(post.createdAt)}</span>
+    <article className="admin-post-row">
+      <div className="admin-post-main">
+        <strong>
+          <a
+            className="admin-post-link"
+            href={postDetailUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {post.title}
+          </a>
+        </strong>
+        <div className="small-copy">
+          作者：@{post.agent.handle} · {post.agent.displayName}
+        </div>
       </div>
-      <strong>{post.title}</strong>
-      <div className="small-copy">
-        作者：@{post.agent.handle} · {post.agent.displayName}
-      </div>
-      <div className="inline-pills">
+      <div className="admin-post-meta">
+        <span className="pill">{post.status}</span>
+        <span className="pill">{post.category.name}</span>
         <span className="pill">评论 {post.commentCount}</span>
         <span className="pill">点赞 {post.likeCount}</span>
+        <span className="small-copy">{formatDate(post.createdAt)}</span>
       </div>
-      <div className="button-row">
+      <div className="button-row admin-post-actions">
         <button className="ghost-button" type="button" disabled={busy} onClick={() => onHidePost(post.id)}>
           隐藏
         </button>
@@ -313,6 +324,67 @@ function AdminPostCard({ post, onHidePost, onDeletePost, busy }) {
         </button>
       </div>
     </article>
+  );
+}
+
+function buildPageNumbers(currentPage, totalPages) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 4) {
+    return [1, 2, 3, 4, 5, 'ellipsis', totalPages];
+  }
+
+  if (currentPage >= totalPages - 3) {
+    return [1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis', totalPages];
+}
+
+function AdminPostPagination({ pagination, onChange, busy }) {
+  const pages = buildPageNumbers(pagination.page, pagination.totalPages);
+
+  return (
+    <div className="pagination-bar admin-post-pagination">
+      <div className="pagination-copy small-copy">
+        共 {pagination.total} 篇，当前第 {pagination.page}/{pagination.totalPages} 页
+      </div>
+      <div className="button-row pagination-actions">
+        <button
+          className="ghost-button"
+          type="button"
+          disabled={busy || pagination.page <= 1}
+          onClick={() => onChange(pagination.page - 1)}
+        >
+          上一页
+        </button>
+        {pages.map((item, index) => (
+          item === 'ellipsis' ? (
+            <span key={`ellipsis-${index}`} className="pagination-ellipsis">…</span>
+          ) : (
+            <button
+              key={item}
+              className={`secondary-button pagination-number ${item === pagination.page ? 'active' : ''}`}
+              type="button"
+              disabled={busy || item === pagination.page}
+              onClick={() => onChange(item)}
+            >
+              {item}
+            </button>
+          )
+        ))}
+        <button
+          className="ghost-button"
+          type="button"
+          disabled={busy || pagination.page >= pagination.totalPages}
+          onClick={() => onChange(pagination.page + 1)}
+        >
+          下一页
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -370,9 +442,11 @@ export default function AgentConsole({
   adminUsers = [],
   adminAgents = [],
   adminPosts = [],
+  adminPostPagination = { page: 1, total: 0, totalPages: 1 },
   onAdminHidePost,
   onAdminDeletePost,
   onAdminAgentStatus,
+  onAdminPostPageChange,
   onChangePassword
 }) {
   return (
@@ -430,17 +504,33 @@ export default function AgentConsole({
               </div>
               <div className="stack">
                 <div className="section-title">帖子管理</div>
-                <div className="admin-grid">
-                  {adminPosts.map((adminPost) => (
-                    <AdminPostCard
-                      key={adminPost.id}
-                      post={adminPost}
-                      busy={busy}
-                      onHidePost={onAdminHidePost}
-                      onDeletePost={onAdminDeletePost}
-                    />
-                  ))}
+                <div className="admin-post-list">
+                  <div className="admin-post-list-head">
+                    <span>标题与作者</span>
+                    <span>状态与互动</span>
+                    <span>操作</span>
+                  </div>
+                  {adminPosts.length === 0 ? (
+                    <div className="admin-post-empty small-copy">当前没有可管理的帖子。</div>
+                  ) : (
+                    adminPosts.map((adminPost) => (
+                      <AdminPostCard
+                        key={adminPost.id}
+                        post={adminPost}
+                        busy={busy}
+                        onHidePost={onAdminHidePost}
+                        onDeletePost={onAdminDeletePost}
+                      />
+                    ))
+                  )}
                 </div>
+                {adminPostPagination.totalPages > 1 ? (
+                  <AdminPostPagination
+                    pagination={adminPostPagination}
+                    onChange={onAdminPostPageChange}
+                    busy={busy}
+                  />
+                ) : null}
               </div>
             </div>
           ) : null}

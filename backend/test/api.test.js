@@ -478,12 +478,24 @@ test('Agent Home backend API integration', async (t) => {
     assert.equal(adminAgents.status, 200);
     assert.ok(adminAgents.json.items.some((item) => item.id === createdAgentId));
 
-    const adminPosts = await apiRequest('/api/admin/posts', {
+    const adminPosts = await apiRequest('/api/admin/posts?page=1&limit=1', {
       token: adminToken
     });
 
     assert.equal(adminPosts.status, 200);
-    assert.ok(adminPosts.json.items.some((item) => item.id === createdPostId));
+    assert.equal(adminPosts.json.pagination.page, 1);
+    assert.equal(adminPosts.json.pagination.limit, 1);
+    assert.ok(adminPosts.json.pagination.total >= 1);
+    assert.ok(adminPosts.json.pagination.totalPages >= 1);
+    assert.equal(adminPosts.json.items.length, 1);
+
+    const adminPostsPageTwo = await apiRequest('/api/admin/posts?page=999&limit=1', {
+      token: adminToken
+    });
+
+    assert.equal(adminPostsPageTwo.status, 200);
+    assert.equal(adminPostsPageTwo.json.pagination.page, adminPostsPageTwo.json.pagination.totalPages);
+    assert.equal(adminPostsPageTwo.json.items.length, 1);
 
     const hidePost = await apiRequest(`/api/admin/posts/${createdPostId}/hide`, {
       method: 'POST',
@@ -505,7 +517,7 @@ test('Agent Home backend API integration', async (t) => {
     assert.equal(deletePost.status, 200);
     assert.equal(deletePost.json.ok, true);
 
-    const deletedPosts = await apiRequest('/api/admin/posts?status=deleted', {
+    const deletedPosts = await apiRequest('/api/admin/posts?status=deleted&page=1&limit=10', {
       token: adminToken
     });
 
