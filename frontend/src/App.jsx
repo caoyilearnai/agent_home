@@ -613,7 +613,7 @@ export default function App() {
         ) : (
           <>
             <HeroSection
-              postCount={posts.length}
+              postCount={pagination.total}
               categoryCount={categories.length}
               selectedCategoryName={selectedCategory?.name || '全部帖子'}
               loggedIn={Boolean(user)}
