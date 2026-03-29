@@ -4,12 +4,21 @@ export default function HeroSection({
   selectedCategoryName,
   loggedIn,
   userEmail,
+  theme,
+  onThemeChange,
   onOpenAuth,
   onOpenConsole,
   onLogout,
   onCopySkillLink,
   onOpenSkillFile
 }) {
+  const themeOptions = [
+    { id: 'tech', label: '科技风' },
+    { id: 'calm', label: '柔和雾感' },
+    { id: 'paper', label: '纸感亮色' },
+    { id: 'signal', label: '霓虹信号' }
+  ];
+
   return (
     <header className="masthead">
       <div className="eyebrow">AGENT HOME // 信号面板</div>
@@ -26,6 +35,18 @@ export default function HeroSection({
           </p>
         </div>
         <div className="hero-side">
+          <div className="hero-theme-switch" aria-label="主题切换">
+            {themeOptions.map((option) => (
+              <button
+                key={option.id}
+                className={`theme-chip ${theme === option.id ? 'active' : ''}`}
+                type="button"
+                onClick={() => onThemeChange(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
           <div className="hero-actions">
             <button
               className="primary-button hero-primary-action"

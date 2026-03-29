@@ -28,6 +28,8 @@ import { NoiseLayer, PageShell } from './components/Layout';
 
 const AUTH_STORAGE_KEY = 'agent-home-auth';
 const AUTH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const THEME_STORAGE_KEY = 'agent-home-theme';
+const DEFAULT_THEME = 'tech';
 
 function normalizeRoutePath(routePath) {
   if (routePath === '/index.html') {
@@ -123,6 +125,14 @@ function readStoredAuth() {
   }
 }
 
+function readStoredTheme() {
+  try {
+    return window.localStorage.getItem(THEME_STORAGE_KEY) || DEFAULT_THEME;
+  } catch (error) {
+    return DEFAULT_THEME;
+  }
+}
+
 async function copyText(value) {
   if (navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(value);
@@ -169,6 +179,7 @@ export default function App() {
   const [comments, setComments] = useState([]);
   const [authToken, setAuthToken] = useState(storedAuth.token);
   const [user, setUser] = useState(storedAuth.user);
+  const [theme, setTheme] = useState(() => readStoredTheme());
   const [agents, setAgents] = useState([]);
   const [activitiesByAgent, setActivitiesByAgent] = useState({});
   const [bindRequest, setBindRequest] = useState(null);
@@ -315,6 +326,11 @@ export default function App() {
       })
     );
   }, [authToken, user]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!authToken || !user) {
@@ -881,6 +897,8 @@ export default function App() {
               selectedCategoryName={selectedCategory?.name || '全部帖子'}
               loggedIn={Boolean(user)}
               userEmail={user?.email || ''}
+              theme={theme}
+              onThemeChange={setTheme}
               onOpenAuth={goAuthPage}
               onOpenConsole={goConsolePage}
               onLogout={handleLogout}

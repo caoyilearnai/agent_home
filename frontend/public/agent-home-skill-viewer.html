@@ -13,6 +13,52 @@
         --ink: #f4fbff;
         --muted: #bfd2df;
         --accent: #3df0c5;
+        --page-bg:
+          radial-gradient(circle at top left, rgba(87, 184, 255, 0.14), transparent 26%),
+          radial-gradient(circle at top right, rgba(61, 240, 197, 0.12), transparent 24%),
+          linear-gradient(180deg, #08111d 0%, #0b1626 42%, #08111d 100%);
+      }
+
+      html[data-theme='paper'] {
+        color-scheme: light;
+        --bg: #eef4fa;
+        --panel: rgba(255, 255, 255, 0.94);
+        --line: rgba(29, 67, 105, 0.14);
+        --ink: #102235;
+        --muted: #5f7387;
+        --accent: #0e9c7c;
+        --page-bg:
+          radial-gradient(circle at top left, rgba(22, 122, 198, 0.09), transparent 26%),
+          radial-gradient(circle at top right, rgba(14, 156, 124, 0.08), transparent 24%),
+          linear-gradient(180deg, #f5f9fc 0%, #edf3f8 42%, #eef4fa 100%);
+      }
+
+      html[data-theme='calm'] {
+        color-scheme: dark;
+        --bg: #1a2431;
+        --panel: rgba(42, 56, 74, 0.94);
+        --line: rgba(152, 183, 207, 0.16);
+        --ink: #ecf3f8;
+        --muted: #afbfcc;
+        --accent: #8db7ac;
+        --page-bg:
+          radial-gradient(circle at top left, rgba(152, 183, 207, 0.12), transparent 26%),
+          radial-gradient(circle at top right, rgba(141, 183, 172, 0.1), transparent 24%),
+          linear-gradient(180deg, #1a2431 0%, #212d3c 42%, #18212d 100%);
+      }
+
+      html[data-theme='signal'] {
+        color-scheme: dark;
+        --bg: #140b1c;
+        --panel: rgba(35, 16, 45, 0.94);
+        --line: rgba(255, 147, 117, 0.18);
+        --ink: #fff6ff;
+        --muted: #d1bed7;
+        --accent: #ff7a59;
+        --page-bg:
+          radial-gradient(circle at top left, rgba(255, 122, 89, 0.16), transparent 26%),
+          radial-gradient(circle at top right, rgba(124, 233, 255, 0.12), transparent 24%),
+          linear-gradient(180deg, #140b1c 0%, #190f24 42%, #120918 100%);
       }
 
       * {
@@ -24,10 +70,7 @@
         min-height: 100vh;
         font-family: "Avenir Next", "Helvetica Neue", sans-serif;
         color: var(--ink);
-        background:
-          radial-gradient(circle at top left, rgba(87, 184, 255, 0.14), transparent 26%),
-          radial-gradient(circle at top right, rgba(61, 240, 197, 0.12), transparent 24%),
-          linear-gradient(180deg, #08111d 0%, #0b1626 42%, #08111d 100%);
+        background: var(--page-bg);
       }
 
       main {
@@ -180,6 +223,7 @@
 
       async function bootstrap() {
         try {
+          document.documentElement.dataset.theme = localStorage.getItem("agent-home-theme") || "tech";
           await loadText("/agent-home-skill.md", "skill-content");
         } catch (error) {
           document.getElementById("skill-content").textContent = error.message;
