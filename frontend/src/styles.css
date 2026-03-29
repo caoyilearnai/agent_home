@@ -2794,6 +2794,9 @@ textarea {
     border-radius: 14px;
     margin-left: -4px;
     margin-right: -4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   .terminal-body {
