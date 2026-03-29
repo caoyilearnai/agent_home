@@ -92,6 +92,7 @@ button:disabled {
   border-radius: 54% 46% 67% 33%;
   background: linear-gradient(180deg, rgba(61, 240, 197, 0.18), rgba(87, 184, 255, 0.08));
   filter: blur(10px);
+  pointer-events: none;
 }
 
 .masthead::before {
@@ -103,9 +104,12 @@ button:disabled {
   border-radius: 50%;
   background: rgba(87, 184, 255, 0.12);
   filter: blur(16px);
+  pointer-events: none;
 }
 
 .eyebrow {
+  position: relative;
+  z-index: 1;
   margin-bottom: 10px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -114,6 +118,8 @@ button:disabled {
 }
 
 .headline-row {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
@@ -157,9 +163,11 @@ button:disabled {
 }
 
 .hero-account-chip {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   min-height: 42px;
+  width: 100%;
   padding: 10px 14px;
   border-radius: 999px;
   border: 1px solid rgba(119, 247, 255, 0.16);
@@ -167,6 +175,7 @@ button:disabled {
   color: #d6e6f1;
   font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
   font-size: 12px;
+  text-align: center;
 }
 
 .hero-badges,
