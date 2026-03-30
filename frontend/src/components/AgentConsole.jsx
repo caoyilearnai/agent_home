@@ -51,73 +51,6 @@ function mapCategoryNames(categoryIds, categories) {
   return categoryIds.map((id) => categoryMap.get(id)).filter(Boolean);
 }
 
-function BindForm({ categories, onCreate, busy }) {
-  const [form, setForm] = useState({
-    displayName: '',
-    persona: '',
-    subscribedCategoryIds: [],
-    pollLimit: '8'
-  });
-
-  useEffect(() => {
-    if (categories.length === 0) {
-      return;
-    }
-
-    setForm((current) => (
-      current.subscribedCategoryIds.length > 0
-        ? current
-        : { ...current, subscribedCategoryIds: categories.map((category) => category.id) }
-    ));
-  }, [categories]);
-
-  function updateField(key) {
-    return (event) => {
-      setForm((current) => ({ ...current, [key]: event.target.value }));
-    };
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    await onCreate({
-      displayName: form.displayName,
-      persona: form.persona,
-      subscribedCategoryIds: form.subscribedCategoryIds,
-      pollLimit: Number(form.pollLimit),
-      watchNewPosts: true,
-      watchHotPosts: true
-    });
-  }
-
-  return (
-    <form className="bind-form" onSubmit={handleSubmit}>
-      <label>
-        <span>Agent 显示名称</span>
-        <input value={form.displayName} onChange={updateField('displayName')} placeholder="Chronicle Desk" required />
-      </label>
-      <div className="small-copy">系统会根据名称自动生成内部唯一标识，无需手动填写。</div>
-      <label>
-        <span>角色设定</span>
-        <textarea value={form.persona} onChange={updateField('persona')} placeholder="说明这个 Agent 的职责和语气" required />
-      </label>
-      <CategorySelector
-        categories={categories}
-        value={form.subscribedCategoryIds}
-        onChange={(subscribedCategoryIds) => setForm((current) => ({ ...current, subscribedCategoryIds }))}
-      />
-      <label>
-        <span>单次拉贴数上限</span>
-        <input type="number" min="1" max="20" value={form.pollLimit} onChange={updateField('pollLimit')} />
-      </label>
-      <div className="button-row">
-        <button className="primary-button" type="submit" disabled={busy}>
-          {busy ? '生成中...' : '生成绑定码'}
-        </button>
-      </div>
-    </form>
-  );
-}
-
 function RuleEditor({ agent, categories, onSave, busy }) {
   const [values, setValues] = useState({
     subscribedCategoryIds: agent.rules.subscribedCategoryIds,
@@ -433,9 +366,7 @@ export default function AgentConsole({
   user,
   agents,
   categories,
-  bindRequest,
   activitiesByAgent,
-  onCreateBindRequest,
   onSaveRules,
   busy,
   onOpenAuth,
@@ -454,13 +385,13 @@ export default function AgentConsole({
       <div className="panel-header">
         <div>
           <div className="section-title">Agent 控制台</div>
-          <p className="small-copy">创建 Agent 绑定码、调整订阅规则，并查看 Agent 的最近行为。</p>
+          <p className="small-copy">调整订阅规则，并查看 Agent 的最近行为。</p>
         </div>
       </div>
       {!user ? (
         <div className="agent-console stack">
           <div className="callout">
-            登录后可查看自己的 Agent、生成绑定码、配置订阅规则。登录和注册入口已经独立到顶部 `Agent Home` 模块。
+            登录后可查看自己的 Agent、配置订阅规则。登录和注册入口已经独立到顶部 `Agent Home` 模块。
           </div>
           <div className="button-row">
             <button className="primary-button" onClick={onOpenAuth}>
@@ -567,22 +498,6 @@ export default function AgentConsole({
               </div>
             </div>
           )}
-          <div className="stack">
-              <div className="panel-header">
-                <div>
-                  <div className="section-title">创建 Agent 绑定码</div>
-                  <p className="small-copy">新 Agent 的绑定入口放在页面最后，避免一进入控制台就被长表单打断。</p>
-                </div>
-              </div>
-            {bindRequest ? (
-              <div className="callout">
-                最近一次绑定码：<strong>{bindRequest.bindCode}</strong>
-                <br />
-                30 分钟内有效。外部 SKILL 可调用 <code>POST /api/agent-auth/exchange</code> 换取 Agent 凭证。
-              </div>
-            ) : null}
-            <BindForm categories={categories} onCreate={onCreateBindRequest} busy={busy} />
-          </div>
         </div>
       )}
     </Panel>

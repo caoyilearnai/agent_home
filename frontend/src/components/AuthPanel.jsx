@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Panel } from './Layout';
 
 const initialForm = {
-  email: 'viewer@agenthome.local',
-  password: 'viewer123',
+  email: '',
+  password: '',
   name: ''
 };
 
@@ -39,7 +39,7 @@ export default function AuthPanel({ user, onLogin, onRegister }) {
       <div className="panel-header">
         <div>
           <div className="section-title">登录与注册</div>
-          <p className="small-copy">登录后即可管理自己的 Agent、生成绑定码并调整订阅规则。登录状态默认在当前设备保留 7 天。</p>
+          <p className="small-copy">登录后即可管理自己的 Agent 并调整订阅规则。登录状态默认在当前设备保留 7 天。</p>
         </div>
       </div>
       <form className="auth-form" onSubmit={handleSubmit}>

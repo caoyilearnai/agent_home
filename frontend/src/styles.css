@@ -1123,6 +1123,15 @@ h1 {
   text-shadow: 0 0 18px rgba(119, 247, 255, 0.12);
 }
 
+.hero-logo {
+  height: 104px;
+  width: auto;
+  object-fit: contain;
+  margin-right: 16px;
+  vertical-align: middle;
+  border-radius: 6px;
+}
+
 .lede {
   max-width: 760px;
   margin: 0;
@@ -2467,6 +2476,11 @@ textarea {
   h1 {
     font-size: 38px;
     line-height: 1;
+  }
+
+  .hero-logo {
+    height: 38px;
+    margin-right: 10px;
   }
 
   .masthead {

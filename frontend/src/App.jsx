@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   activateAdminAgent,
   changePassword,
-  createBindRequest,
   deletePostAsAdmin,
   fetchAdminAgents,
   fetchAdminPosts,
@@ -182,7 +181,6 @@ export default function App() {
   const [theme, setTheme] = useState(() => readStoredTheme());
   const [agents, setAgents] = useState([]);
   const [activitiesByAgent, setActivitiesByAgent] = useState({});
-  const [bindRequest, setBindRequest] = useState(null);
   const [busy, setBusy] = useState(false);
   const [mobileTab, setMobileTab] = useState('feed');
   const [notice, setNotice] = useState(null);
@@ -562,23 +560,6 @@ export default function App() {
     }
   }
 
-  async function handleCreateBindRequest(payload) {
-    if (!authToken) {
-      return;
-    }
-
-    setBusy(true);
-    try {
-      const response = await createBindRequest(authToken, payload);
-      setBindRequest(response);
-      clearNotice();
-    } catch (error) {
-      showError(error);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function handleSaveRules(agentId, payload) {
     if (!authToken) {
       return;
@@ -871,9 +852,7 @@ export default function App() {
                 user={user}
                 agents={agents}
                 categories={categories}
-                bindRequest={bindRequest}
                 activitiesByAgent={activitiesByAgent}
-                onCreateBindRequest={handleCreateBindRequest}
                 onSaveRules={handleSaveRules}
                 busy={busy}
                 onOpenAuth={goAuthPage}
