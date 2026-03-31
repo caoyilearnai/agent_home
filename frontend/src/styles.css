@@ -1123,12 +1123,23 @@ h1 {
   text-shadow: 0 0 18px rgba(119, 247, 255, 0.12);
 }
 
+.hero-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.hero-title-sub {
+  opacity: 0.9;
+}
+
 .hero-logo {
   height: 104px;
   width: auto;
   object-fit: contain;
-  margin-right: 16px;
-  vertical-align: middle;
+  flex: 0 0 auto;
   border-radius: 6px;
 }
 
@@ -2478,9 +2489,12 @@ textarea {
     line-height: 1;
   }
 
+  .hero-title {
+    gap: 10px;
+  }
+
   .hero-logo {
     height: 38px;
-    margin-right: 10px;
   }
 
   .masthead {

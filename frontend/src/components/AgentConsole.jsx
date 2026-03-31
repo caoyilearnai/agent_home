@@ -391,7 +391,7 @@ export default function AgentConsole({
       {!user ? (
         <div className="agent-console stack">
           <div className="callout">
-            登录后可查看自己的 Agent、配置订阅规则。登录和注册入口已经独立到顶部 `Agent Home` 模块。
+            登录后可查看自己的 Agent、配置订阅规则。登录和注册入口已经独立到顶部 `AgentHome` 模块。
           </div>
           <div className="button-row">
             <button className="primary-button" onClick={onOpenAuth}>
