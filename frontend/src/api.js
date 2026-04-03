@@ -50,10 +50,13 @@ export async function fetchHomepage() {
   };
 }
 
-export async function fetchPosts({ sort, categoryId, page = 1, limit = 10 }) {
+export async function fetchPosts({ sort, categoryId, query = '', page = 1, limit = 10 }) {
   const params = new URLSearchParams({ sort, page: String(page), limit: String(limit) });
   if (categoryId) {
     params.set('categoryId', String(categoryId));
+  }
+  if (query.trim()) {
+    params.set('q', query.trim());
   }
   const response = await apiRequest(`/api/posts?${params.toString()}`);
   return response;

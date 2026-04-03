@@ -170,6 +170,8 @@ export default function App() {
   const [categories, setCategories] = useState([]);
   const [posts, setPosts] = useState([]);
   const [sort, setSort] = useState('new');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchDraft, setSearchDraft] = useState('');
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ page: 1, limit: pageSize, total: 0, totalPages: 1 });
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -420,9 +422,26 @@ export default function App() {
       });
   }, [route]);
 
-  async function refreshPosts(nextSort = sort, nextCategoryId = selectedCategoryId, nextPage = page, options = {}) {
+  async function refreshPosts(
+    nextSort = sort,
+    nextCategoryId = selectedCategoryId,
+    nextPage = page,
+    options = {}
+  ) {
     const { append = false } = options;
-    const response = await fetchPosts({ sort: nextSort, categoryId: nextCategoryId, page: nextPage, limit: pageSize });
+    const nextQuery = options.query ?? searchQuery;
+
+    if (options.query === undefined && searchDraft !== searchQuery) {
+      setSearchDraft(searchQuery);
+    }
+
+    const response = await fetchPosts({
+      sort: nextSort,
+      categoryId: nextCategoryId,
+      query: nextQuery,
+      page: nextPage,
+      limit: pageSize
+    });
     const nextPosts = response.items;
     setPosts((currentPosts) => {
       if (!append) {
@@ -495,6 +514,31 @@ export default function App() {
 
   function handleSelectPost(postId) {
     openPostPage(postId);
+  }
+
+  async function handleSearchSubmit(event) {
+    event?.preventDefault?.();
+    const nextQuery = searchDraft.trim();
+
+    if (nextQuery === searchQuery && page === 1) {
+      focusFeedSection();
+      return;
+    }
+
+    setSearchQuery(nextQuery);
+    await refreshPosts(sort, selectedCategoryId, 1, { query: nextQuery });
+    focusFeedSection();
+  }
+
+  async function handleClearSearch() {
+    if (!searchQuery && !searchDraft) {
+      return;
+    }
+
+    setSearchDraft('');
+    setSearchQuery('');
+    await refreshPosts(sort, selectedCategoryId, 1, { query: '' });
+    focusFeedSection();
   }
 
   function focusFeedSection() {
@@ -756,7 +800,7 @@ export default function App() {
 
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
-  }, [isMobileViewport, route.page, page, pagination.totalPages, isLoadingMorePosts, sort, selectedCategoryId]);
+  }, [isMobileViewport, route.page, page, pagination.totalPages, isLoadingMorePosts, sort, selectedCategoryId, searchQuery]);
 
   useEffect(() => {
     const wasMobileViewport = previousMobileViewportRef.current;
@@ -767,7 +811,7 @@ export default function App() {
         showError(error);
       });
     }
-  }, [isMobileViewport, posts.length, pagination.limit, sort, selectedCategoryId, page]);
+  }, [isMobileViewport, posts.length, pagination.limit, sort, selectedCategoryId, page, searchQuery]);
 
   const isDetailPage = route.page === 'detail';
   const useMobileInfiniteScroll = isMobileViewport && route.page === 'home';
@@ -909,8 +953,13 @@ export default function App() {
                     posts={posts}
                     sort={sort}
                     pagination={pagination}
+                    searchDraft={searchDraft}
+                    searchQuery={searchQuery}
                     onSortChange={handleSortChange}
                     onPageChange={handlePageChange}
+                    onSearchDraftChange={setSearchDraft}
+                    onSearchSubmit={handleSearchSubmit}
+                    onSearchClear={handleClearSearch}
                     selectedPostId={selectedPostId}
                     onSelectPost={handleSelectPost}
                     sectionRef={feedSectionRef}

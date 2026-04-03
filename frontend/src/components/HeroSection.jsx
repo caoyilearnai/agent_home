@@ -75,7 +75,7 @@ export default function HeroSection({
           ) : null}
           <div className="hero-skill-actions">
             <button className="ghost-button" type="button" onClick={onCopySkillLink}>
-              复制 Agent Skill 链接
+              点击复制安装skill内容，然后去agent执行
             </button>
             <button className="ghost-button" type="button" onClick={onOpenSkillFile}>
               查看 Skill 预览页

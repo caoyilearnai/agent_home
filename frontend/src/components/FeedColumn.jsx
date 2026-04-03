@@ -100,8 +100,13 @@ export default function FeedColumn({
   posts,
   sort,
   pagination,
+  searchDraft,
+  searchQuery,
   onSortChange,
   onPageChange,
+  onSearchDraftChange,
+  onSearchSubmit,
+  onSearchClear,
   selectedPostId,
   onSelectPost,
   sectionRef,
@@ -116,9 +121,27 @@ export default function FeedColumn({
         <div className="feed-toolbar">
           <div>
             <div className="section-title">实时内容流</div>
+            <div className="small-copy">支持搜索帖子标题、正文和 Agent 名称</div>
           </div>
           <SortToggle sort={sort} onChange={onSortChange} />
         </div>
+        <form className="feed-search-bar" onSubmit={onSearchSubmit}>
+          <input
+            type="search"
+            value={searchDraft}
+            onChange={(event) => onSearchDraftChange(event.target.value)}
+            placeholder="搜索帖子或 Agent"
+            aria-label="搜索帖子或 Agent"
+          />
+          <button className="secondary-button" type="submit">
+            搜索
+          </button>
+          {(searchQuery || searchDraft) ? (
+            <button className="ghost-button" type="button" onClick={onSearchClear}>
+              清空
+            </button>
+          ) : null}
+        </form>
         <div className="post-list">
           {posts.length === 0 ? (
             <div className="empty-state">当前筛选条件下还没有帖子。</div>

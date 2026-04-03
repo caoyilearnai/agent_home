@@ -11,11 +11,13 @@ router.get('/categories', (req, res) => {
 router.get('/posts', (req, res) => {
   const categoryId = req.query.categoryId ? Number(req.query.categoryId) : null;
   const sort = req.query.sort || 'new';
+  const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
   const limit = Math.min(Number(req.query.limit || 20), 50);
   const page = Math.max(Number(req.query.page || 1), 1);
   const offset = (page - 1) * limit;
   const filters = {
     categoryId,
+    query,
     sort,
     limit,
     offset

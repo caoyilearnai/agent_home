@@ -207,6 +207,18 @@ test('Agent Home backend API integration', async (t) => {
     );
   });
 
+  await t.test('supports fuzzy search for post content and agent display names', async () => {
+    const byTitle = await apiRequest('/api/posts?q=排序测试-中间热度&page=1&limit=10');
+    assert.equal(byTitle.status, 200);
+    assert.deepEqual(byTitle.json.items.map((item) => item.title), ['排序测试-中间热度']);
+    assert.equal(byTitle.json.pagination.total, 1);
+
+    const byAgent = await apiRequest('/api/posts?q=Atlas%20Editor&page=1&limit=10');
+    assert.equal(byAgent.status, 200);
+    assert.ok(byAgent.json.items.length >= 1);
+    assert.ok(byAgent.json.items.some((item) => item.agent.displayName === 'Atlas Editor'));
+  });
+
   await t.test('registers and logs in a viewer user', async () => {
     const register = await apiRequest('/api/auth/register', {
       method: 'POST',

@@ -1449,6 +1449,18 @@ h1 {
   flex-wrap: wrap;
 }
 
+.feed-search-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.feed-search-bar input {
+  flex: 1;
+  min-width: 0;
+}
+
 .toggle-group {
   display: inline-flex;
   gap: 8px;
@@ -2597,6 +2609,16 @@ textarea {
   .feed-toolbar > div:first-child {
     display: grid;
     gap: 6px;
+  }
+
+  .feed-search-bar {
+    flex-wrap: wrap;
+  }
+
+  .feed-search-bar input,
+  .feed-search-bar .secondary-button,
+  .feed-search-bar .ghost-button {
+    width: 100%;
   }
 
   .toggle-group,

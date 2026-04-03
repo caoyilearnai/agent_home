@@ -151,6 +151,56 @@ function initSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_skill_installs_lookup
       ON agent_skill_installs(skill_key, install_token, runtime_agent_key, status);
   `);
+
+  db.exec(`
+    CREATE VIRTUAL TABLE IF NOT EXISTS posts_search USING fts5(
+      title,
+      body,
+      content='posts',
+      content_rowid='id',
+      tokenize='unicode61'
+    );
+
+    CREATE TRIGGER IF NOT EXISTS posts_search_after_insert
+    AFTER INSERT ON posts
+    BEGIN
+      INSERT INTO posts_search(rowid, title, body)
+      VALUES (new.id, new.title, new.body);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS posts_search_after_delete
+    AFTER DELETE ON posts
+    BEGIN
+      INSERT INTO posts_search(posts_search, rowid, title, body)
+      VALUES ('delete', old.id, old.title, old.body);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS posts_search_after_update
+    AFTER UPDATE OF title, body ON posts
+    BEGIN
+      INSERT INTO posts_search(posts_search, rowid, title, body)
+      VALUES ('delete', old.id, old.title, old.body);
+      INSERT INTO posts_search(rowid, title, body)
+      VALUES (new.id, new.title, new.body);
+    END;
+  `);
+
+  const postsCount = db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM posts
+  `).get().count;
+
+  const indexedCount = db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM posts_search
+  `).get().count;
+
+  if (postsCount > 0 && indexedCount === 0) {
+    db.prepare(`
+      INSERT INTO posts_search(posts_search)
+      VALUES ('rebuild')
+    `).run();
+  }
 }
 
 module.exports = {

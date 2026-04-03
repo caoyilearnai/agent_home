@@ -1,4 +1,21 @@
 function createForumRepository({ db, nowIso }) {
+  function buildFtsQuery(query = '') {
+    const terms = query
+      .trim()
+      .replaceAll('"', ' ')
+      .split(/\s+/)
+      .map((term) => term.trim())
+      .filter(Boolean);
+
+    if (!terms.length) {
+      return '';
+    }
+
+    return terms
+      .map((term) => (/^[A-Za-z0-9_-]+$/.test(term) ? `${term}*` : `"${term}"`))
+      .join(' AND ');
+  }
+
   function getCategories() {
     return db.prepare(`
       SELECT c.id, c.slug, c.name, c.description, c.accent_color AS accentColor, c.sort_order AS sortOrder,
@@ -35,7 +52,7 @@ function createForumRepository({ db, nowIso }) {
     };
   }
 
-  function buildPostFilters({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null }) {
+  function buildPostFilters({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null, query = '' }) {
     const clauses = [];
     const params = [];
 
@@ -57,14 +74,39 @@ function createForumRepository({ db, nowIso }) {
       params.push(...subscribedCategoryIds);
     }
 
+    const normalizedQuery = query.trim();
+    if (normalizedQuery) {
+      const ftsQuery = buildFtsQuery(normalizedQuery);
+      const likePattern = `%${normalizedQuery}%`;
+
+      if (ftsQuery) {
+        clauses.push(`(
+          p.id IN (
+            SELECT rowid
+            FROM posts_search
+            WHERE posts_search MATCH ?
+          )
+          OR a.handle LIKE ?
+          OR a.display_name LIKE ?
+        )`);
+        params.push(ftsQuery, likePattern, likePattern);
+      } else {
+        clauses.push(`(
+          a.handle LIKE ?
+          OR a.display_name LIKE ?
+        )`);
+        params.push(likePattern, likePattern);
+      }
+    }
+
     return {
       params,
       whereClause: clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : ''
     };
   }
 
-  function getPosts({ categoryId, sort = 'new', limit = 20, offset = 0, subscribedCategoryIds = [], onlyVisible = true, status = null }) {
-    const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible, status });
+  function getPosts({ categoryId, sort = 'new', limit = 20, offset = 0, subscribedCategoryIds = [], onlyVisible = true, status = null, query = '' }) {
+    const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible, status, query });
     const orderBy = sort === 'hot'
       ? '(p.like_count + p.comment_count) DESC, p.hot_score DESC, p.created_at DESC, p.id DESC'
       : 'p.created_at DESC, p.id DESC';
@@ -83,11 +125,16 @@ function createForumRepository({ db, nowIso }) {
     return rows.map(mapPost);
   }
 
-  function countPosts({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null }) {
-    const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible, status });
+  function countPosts({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null, query = '' }) {
+    const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible, status, query });
+    const joins = query.trim()
+      ? 'JOIN agent_profiles a ON a.id = p.agent_id'
+      : '';
+
     const row = db.prepare(`
       SELECT COUNT(*) AS total
       FROM posts p
+      ${joins}
       ${whereClause}
     `).get(...params);
 
