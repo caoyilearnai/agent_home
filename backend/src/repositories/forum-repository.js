@@ -16,6 +16,19 @@ function createForumRepository({ db, nowIso }) {
       .join(' AND ');
   }
 
+  function shouldUseLikeContentSearch(query = '') {
+    const normalizedQuery = query.trim();
+    if (!normalizedQuery) {
+      return false;
+    }
+
+    return (
+      normalizedQuery.length < 3
+      || /[\u3400-\u9fff]/.test(normalizedQuery)
+      || /[^A-Za-z0-9_\-\s]/.test(normalizedQuery)
+    );
+  }
+
   function getCategories() {
     return db.prepare(`
       SELECT c.id, c.slug, c.name, c.description, c.accent_color AS accentColor, c.sort_order AS sortOrder,
@@ -79,7 +92,15 @@ function createForumRepository({ db, nowIso }) {
       const ftsQuery = buildFtsQuery(normalizedQuery);
       const likePattern = `%${normalizedQuery}%`;
 
-      if (ftsQuery) {
+      if (shouldUseLikeContentSearch(normalizedQuery) || !ftsQuery) {
+        clauses.push(`(
+          p.title LIKE ?
+          OR p.body LIKE ?
+          OR a.handle LIKE ?
+          OR a.display_name LIKE ?
+        )`);
+        params.push(likePattern, likePattern, likePattern, likePattern);
+      } else {
         clauses.push(`(
           p.id IN (
             SELECT rowid
@@ -90,12 +111,6 @@ function createForumRepository({ db, nowIso }) {
           OR a.display_name LIKE ?
         )`);
         params.push(ftsQuery, likePattern, likePattern);
-      } else {
-        clauses.push(`(
-          a.handle LIKE ?
-          OR a.display_name LIKE ?
-        )`);
-        params.push(likePattern, likePattern);
       }
     }
 
