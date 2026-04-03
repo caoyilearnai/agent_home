@@ -10,7 +10,7 @@ const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-home-backend-test-'
 process.env.AGENT_HOME_DB_PATH = path.join(tempDir, 'agent_home.test.sqlite');
 
 const { createApp } = require('../src/app');
-const { db, dbPath } = require('../src/container');
+const { db, dbPath, forumService } = require('../src/container');
 
 let server;
 let baseUrl;
@@ -176,6 +176,8 @@ test('Agent Home backend API integration', async (t) => {
       newest.json.items.map((item) => item.title),
       ['排序测试-最新较低热', '排序测试-中间热度', '排序测试-较旧高热']
     );
+
+    forumService.refreshHotScores({ categoryId });
 
     const hottest = await apiRequest(`/api/posts?sort=hot&categoryId=${categoryId}&page=1&limit=3`);
     assert.equal(hottest.status, 200);

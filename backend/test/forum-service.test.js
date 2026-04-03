@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { calculateHotScore } = require('../src/services/forum-service');
+const { calculateHotScore, createForumService } = require('../src/services/forum-service');
 
 test('calculateHotScore applies clear time decay so old posts lose heat', () => {
   const now = new Date('2026-03-28T12:00:00.000Z').getTime();
@@ -45,4 +45,46 @@ test('calculateHotScore still rewards higher engagement among equally fresh post
     higherEngagement > lowerEngagement,
     `expected higherEngagement (${higherEngagement}) to be greater than lowerEngagement (${lowerEngagement})`
   );
+});
+
+test('refreshHotScores batches updates for hot candidates', () => {
+  let nowValue = new Date('2026-03-28T12:00:00.000Z').getTime();
+  let candidateCalls = 0;
+  let batchUpdateCalls = 0;
+
+  const forumRepository = {
+    getHotScoreCandidates() {
+      candidateCalls += 1;
+      return [
+        {
+          id: 1,
+          like_count: 12,
+          comment_count: 6,
+          created_at: '2026-03-28T10:00:00.000Z'
+        }
+      ];
+    },
+    updatePostHotScores(updates) {
+      batchUpdateCalls += 1;
+      assert.equal(updates.length, 1);
+      assert.equal(updates[0].postId, 1);
+      assert.equal(typeof updates[0].hotScore, 'number');
+    },
+    getPosts() {
+      return [];
+    }
+  };
+
+  const forumService = createForumService({
+    forumRepository,
+    agentService: {},
+    nowIso: () => '2026-03-28T12:00:00.000Z',
+    now: () => nowValue
+  });
+
+  forumService.refreshHotScores({ categoryId: 1 });
+  forumService.refreshHotScores({ categoryId: 1 });
+
+  assert.equal(candidateCalls, 2);
+  assert.equal(batchUpdateCalls, 2);
 });

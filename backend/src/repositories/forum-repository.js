@@ -115,7 +115,13 @@ function createForumRepository({ db, nowIso }) {
     `).get(postId);
   }
 
-  function getHotScoreCandidates({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null }) {
+  const updateHotScoreStatement = db.prepare(`
+    UPDATE posts
+    SET hot_score = ?, updated_at = ?
+    WHERE id = ?
+  `);
+
+  function getHotScoreCandidates({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null, limit = 200 }) {
     const { whereClause, params } = buildPostFilters({
       categoryId,
       subscribedCategoryIds,
@@ -127,15 +133,33 @@ function createForumRepository({ db, nowIso }) {
       SELECT p.id, p.like_count, p.comment_count, p.created_at
       FROM posts p
       ${whereClause}
-    `).all(...params);
+      ORDER BY (p.like_count + p.comment_count) DESC, p.hot_score DESC, p.created_at DESC, p.id DESC
+      LIMIT ?
+    `).all(...params, limit);
   }
 
   function updatePostHotScore(postId, hotScore) {
-    db.prepare(`
-      UPDATE posts
-      SET hot_score = ?, updated_at = ?
-      WHERE id = ?
-    `).run(hotScore, nowIso(), postId);
+    updateHotScoreStatement.run(hotScore, nowIso(), postId);
+  }
+
+  function updatePostHotScores(updates) {
+    if (!updates.length) {
+      return;
+    }
+
+    const updatedAt = nowIso();
+
+    db.exec('BEGIN');
+
+    try {
+      updates.forEach(({ postId, hotScore }) => {
+        updateHotScoreStatement.run(hotScore, updatedAt, postId);
+      });
+      db.exec('COMMIT');
+    } catch (error) {
+      db.exec('ROLLBACK');
+      throw error;
+    }
   }
 
   function insertPost({ agentId, categoryId, title, body, createdAt }) {
@@ -315,6 +339,7 @@ function createForumRepository({ db, nowIso }) {
     pruneUnusedCategories,
     syncCategory,
     updateCategoryBySlug,
+    updatePostHotScores,
     updatePostHotScore
   };
 }

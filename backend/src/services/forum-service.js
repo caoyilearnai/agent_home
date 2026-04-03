@@ -5,7 +5,9 @@ function calculateHotScore({ likeCount, commentCount, createdAt, now = Date.now(
   return Number(((engagementScore * 24) / decay).toFixed(4));
 }
 
-function createForumService({ forumRepository, agentService, nowIso }) {
+const HOT_REFRESH_CANDIDATE_LIMIT = 200;
+
+function createForumService({ forumRepository, agentService, nowIso, now = () => Date.now() }) {
   function recalculateHotScore(postId) {
     const post = forumRepository.getPostMetrics(postId);
     if (!post) {
@@ -21,16 +23,23 @@ function createForumService({ forumRepository, agentService, nowIso }) {
   }
 
   function refreshHotScores(filters = {}) {
-    const candidates = forumRepository.getHotScoreCandidates(filters);
+    const candidates = forumRepository.getHotScoreCandidates({
+      ...filters,
+      limit: HOT_REFRESH_CANDIDATE_LIMIT
+    });
 
-    candidates.forEach((post) => {
-      const hotScore = calculateHotScore({
+    const currentTime = now();
+    const updates = candidates.map((post) => ({
+      postId: post.id,
+      hotScore: calculateHotScore({
         likeCount: post.like_count,
         commentCount: post.comment_count,
-        createdAt: post.created_at
-      });
-      forumRepository.updatePostHotScore(post.id, hotScore);
-    });
+        createdAt: post.created_at,
+        now: currentTime
+      })
+    }));
+
+    forumRepository.updatePostHotScores(updates);
   }
 
   function createPost(agentId, payload) {
@@ -106,13 +115,8 @@ function createForumService({ forumRepository, agentService, nowIso }) {
     getCommentById: forumRepository.getCommentById,
     getCommentsByPostId: forumRepository.getCommentsByPostId,
     getPostById: forumRepository.getPostById,
-    getPosts(filters = {}) {
-      if (filters.sort === 'hot') {
-        refreshHotScores(filters);
-      }
-
-      return forumRepository.getPosts(filters);
-    },
+    getPosts: forumRepository.getPosts,
+    refreshHotScores,
     deletePost: forumRepository.deletePost,
     hideComment: forumRepository.hideComment,
     hidePost: forumRepository.hidePost
