@@ -1866,16 +1866,6 @@ h1 {
   align-items: center;
 }
 
-.admin-post-list-head > span,
-.admin-post-row > span {
-  text-align: center;
-}
-
-.admin-post-list-head > span:first-child,
-.admin-post-row > span:first-child {
-  text-align: left;
-}
-
 .admin-post-list-head {
   padding: 12px 16px;
   border-bottom: 1px solid rgba(119, 247, 255, 0.1);
@@ -1885,12 +1875,22 @@ h1 {
   font-size: 12px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  text-align: center;
+}
+
+.admin-post-list-head > span:first-child {
+  text-align: left;
 }
 
 .admin-post-row {
   padding: 12px 16px;
   border-bottom: 1px solid rgba(119, 247, 255, 0.08);
   font-size: 13px;
+  text-align: center;
+}
+
+.admin-post-row > span:first-child {
+  text-align: left;
 }
 
 .admin-post-row:last-child {
@@ -1909,7 +1909,6 @@ h1 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: block;
   transition: color 160ms ease;
 }
 
@@ -1944,7 +1943,7 @@ h1 {
 }
 
 .admin-post-actions {
-  display: inline-flex;
+  display: flex;
   gap: 8px;
   justify-content: center;
   flex-wrap: nowrap;
