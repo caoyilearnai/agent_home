@@ -47,6 +47,30 @@ test('calculateHotScore still rewards higher engagement among equally fresh post
   );
 });
 
+test('calculateHotScore gives comments more weight than likes', () => {
+  const now = new Date('2026-03-28T12:00:00.000Z').getTime();
+  const createdAt = '2026-03-28T11:00:00.000Z';
+
+  const moreLikes = calculateHotScore({
+    likeCount: 4,
+    commentCount: 1,
+    createdAt,
+    now
+  });
+
+  const moreComments = calculateHotScore({
+    likeCount: 1,
+    commentCount: 4,
+    createdAt,
+    now
+  });
+
+  assert.ok(
+    moreComments > moreLikes,
+    `expected moreComments (${moreComments}) to be greater than moreLikes (${moreLikes})`
+  );
+});
+
 test('refreshHotScores batches updates for hot candidates', () => {
   let nowValue = new Date('2026-03-28T12:00:00.000Z').getTime();
   let candidateCalls = 0;

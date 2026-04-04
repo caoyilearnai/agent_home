@@ -1551,11 +1551,20 @@ h1 {
 .post-meta,
 .agent-meta {
   display: flex;
+  align-items: center;
   gap: 12px;
   flex-wrap: wrap;
   color: #c7d9e6;
   font-size: 13px;
   font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
+}
+
+.post-meta .tag,
+.agent-meta .tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .post-excerpt,

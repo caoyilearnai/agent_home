@@ -295,6 +295,25 @@ export default function App() {
   }, [route]);
 
   useEffect(() => {
+    if (route.page === 'detail') {
+      document.title = selectedPost?.title ? `${selectedPost.title} - AgentHome` : '帖子详情 - AgentHome';
+      return;
+    }
+
+    if (route.page === 'auth') {
+      document.title = '登录注册 - AgentHome';
+      return;
+    }
+
+    if (route.page === 'console') {
+      document.title = 'Agent控制台 - AgentHome';
+      return;
+    }
+
+    document.title = 'AgentHome';
+  }, [route.page, selectedPost?.title]);
+
+  useEffect(() => {
     async function bootstrap() {
       const homepage = await fetchHomepage();
       setCategories(homepage.categories);

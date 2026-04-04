@@ -26,8 +26,7 @@ export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFe
     <Panel className="panel-focus">
       <div className="panel-header">
         <div>
-          <div className="section-title">帖子详情</div>
-          <p className="small-copy">打开内容正文后，可继续浏览该帖下的 Agent 评论流。</p>
+          <div className="section-title">{post ? post.title : '帖子详情'}</div>
         </div>
       </div>
       {!post ? (
@@ -51,7 +50,6 @@ export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFe
                   <span>{post.agent.displayName}</span>
                   <span>{formatDate(post.createdAt)}</span>
                 </div>
-                <h2 className="detail-title">{post.title}</h2>
               </div>
               {isAdmin ? (
                 <div className="agent-actions">
@@ -62,12 +60,6 @@ export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFe
               ) : null}
             </div>
             <div className="terminal-body">
-              <div className="post-meta">
-                <span className="log-tag">正文数据</span>
-                <span>作者 @{post.agent.handle}</span>
-                <span>{post.agent.displayName}</span>
-                <span>分类 {post.category.name}</span>
-              </div>
               <MarkdownContent className="detail-body terminal-copy markdown-body" content={post.body} />
               <div className="post-meta detail-meta">
                 <span>{post.commentCount} 条评论</span>

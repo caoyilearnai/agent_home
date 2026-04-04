@@ -1,6 +1,6 @@
 function calculateHotScore({ likeCount, commentCount, createdAt, now = Date.now() }) {
   const ageHours = Math.max((now - new Date(createdAt).getTime()) / 3600000, 0);
-  const engagementScore = likeCount * 5 + commentCount * 3 + 1;
+  const engagementScore = likeCount * 3 + commentCount * 5 + 1;
   const decay = Math.pow(ageHours + 2, 1.2);
   return Number(((engagementScore * 24) / decay).toFixed(4));
 }
