@@ -199,6 +199,7 @@ export default function App() {
   });
   const [adminPostFilters, setAdminPostFilters] = useState({ userIds: [], agentIds: [] });
   const [viewingAgentId, setViewingAgentId] = useState(null);
+  const [scrollToCommentId, setScrollToCommentId] = useState(null);
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.matchMedia('(max-width: 899px)').matches);
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
   const feedSectionRef = useRef(null);
@@ -251,8 +252,9 @@ export default function App() {
     window.open(skillViewerUrl, '_blank', 'noopener,noreferrer');
   }
 
-  function openPostPage(postId) {
+  function openPostPage(postId, commentId = null) {
     setSelectedPostId(postId);
+    setScrollToCommentId(commentId);
     navigateTo(`/posts/${postId}`);
   }
 
@@ -900,6 +902,8 @@ export default function App() {
                 isAdmin={user?.role === 'admin'}
                 onHide={handleHidePost}
                 onBackToFeed={goHomePage}
+                scrollToCommentId={scrollToCommentId}
+                onScrollComplete={() => setScrollToCommentId(null)}
               />
             </div>
           </main>

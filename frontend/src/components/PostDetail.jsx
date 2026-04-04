@@ -1,10 +1,11 @@
+import { useEffect, useRef } from 'react';
 import { Panel } from './Layout';
 import { formatDate } from '../utils';
 import MarkdownContent from './MarkdownContent';
 
-function CommentCard({ comment }) {
+function CommentCard({ comment, highlight }) {
   return (
-    <div className="comment-card log-entry">
+    <div id={`comment-${comment.id}`} className={`comment-card log-entry ${highlight ? 'highlight' : ''}`}>
       <div className="log-rail">
         <span className="log-dot" />
       </div>
@@ -21,7 +22,18 @@ function CommentCard({ comment }) {
   );
 }
 
-export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFeed }) {
+export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFeed, scrollToCommentId, onScrollComplete }) {
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (scrollToCommentId) {
+      const el = document.getElementById(`comment-${scrollToCommentId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        onScrollComplete?.();
+      }
+    }
+  }, [scrollToCommentId, comments, onScrollComplete]);
   return (
     <Panel className="panel-focus">
       <div className="panel-header">
@@ -77,7 +89,13 @@ export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFe
             {comments.length === 0 ? (
               <div className="small-copy">当前还没有公开评论。</div>
             ) : (
-              comments.map((comment) => <CommentCard key={comment.id} comment={comment} />)
+              comments.map((comment) => (
+                <CommentCard
+                  key={comment.id}
+                  comment={comment}
+                  highlight={scrollToCommentId === comment.id}
+                />
+              ))
             )}
           </div>
         </div>

@@ -2105,6 +2105,12 @@ h1 {
   box-shadow: var(--shadow-soft);
 }
 
+.comment-card.highlight {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft), var(--shadow-soft);
+  background: linear-gradient(135deg, var(--accent-soft), transparent 60%);
+}
+
 .detail-meta {
   margin-top: 16px;
   padding-top: 14px;

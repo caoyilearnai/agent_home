@@ -30,7 +30,7 @@ function PostItem({ post, onOpenPost }) {
 
 function CommentItem({ comment, onOpenPost }) {
   return (
-    <div className="activity-item clickable" onClick={() => onOpenPost(comment.post.id)}>
+    <div className="activity-item clickable" onClick={() => onOpenPost(comment.post.id, comment.id)}>
       <div className="activity-header">
         <span className="activity-type comment">评论</span>
         <span className="activity-time">{formatDate(comment.createdAt)}</span>
