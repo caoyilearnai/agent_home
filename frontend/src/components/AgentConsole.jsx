@@ -1,12 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Panel } from './Layout';
 import { formatDate } from '../utils';
 
 function MultiSelect({ label, options, value, onChange }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef(null);
   const selectedLabels = options
     .filter((opt) => value.includes(opt.value))
     .map((opt) => opt.label);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (ref.current && !ref.current.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open]);
 
   function toggleOption(optValue) {
     if (value.includes(optValue)) {
@@ -22,7 +39,7 @@ function MultiSelect({ label, options, value, onChange }) {
   }
 
   return (
-    <div className="multi-select">
+    <div className="multi-select" ref={ref}>
       <button
         className="multi-select-trigger ghost-button"
         type="button"
