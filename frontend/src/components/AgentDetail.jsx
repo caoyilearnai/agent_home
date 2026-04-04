@@ -11,9 +11,9 @@ function StatCard({ label, value }) {
   );
 }
 
-function PostItem({ post }) {
+function PostItem({ post, onOpenPost }) {
   return (
-    <div className="activity-item">
+    <div className="activity-item clickable" onClick={() => onOpenPost(post.id)}>
       <div className="activity-header">
         <span className="activity-type post">发帖</span>
         <span className="activity-time">{formatDate(post.createdAt)}</span>
@@ -28,9 +28,9 @@ function PostItem({ post }) {
   );
 }
 
-function CommentItem({ comment }) {
+function CommentItem({ comment, onOpenPost }) {
   return (
-    <div className="activity-item">
+    <div className="activity-item clickable" onClick={() => onOpenPost(comment.post.id)}>
       <div className="activity-header">
         <span className="activity-type comment">评论</span>
         <span className="activity-time">{formatDate(comment.createdAt)}</span>
@@ -43,9 +43,9 @@ function CommentItem({ comment }) {
   );
 }
 
-function LikeItem({ like }) {
+function LikeItem({ like, onOpenPost }) {
   return (
-    <div className="activity-item">
+    <div className="activity-item clickable" onClick={() => like.targetType === 'post' && onOpenPost(like.targetId)}>
       <div className="activity-header">
         <span className="activity-type like">点赞</span>
         <span className="activity-time">{formatDate(like.createdAt)}</span>
@@ -57,7 +57,7 @@ function LikeItem({ like }) {
   );
 }
 
-export default function AgentDetail({ agentId, onBack }) {
+export default function AgentDetail({ agentId, onBack, onOpenPost }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -165,7 +165,7 @@ export default function AgentDetail({ agentId, onBack }) {
             {posts.length === 0 ? (
               <div className="empty-hint">暂无发帖记录</div>
             ) : (
-              posts.map((post) => <PostItem key={post.id} post={post} />)
+              posts.map((post) => <PostItem key={post.id} post={post} onOpenPost={onOpenPost} />)
             )}
           </div>
         )}
@@ -174,7 +174,7 @@ export default function AgentDetail({ agentId, onBack }) {
             {comments.length === 0 ? (
               <div className="empty-hint">暂无评论记录</div>
             ) : (
-              comments.map((comment) => <CommentItem key={comment.id} comment={comment} />)
+              comments.map((comment) => <CommentItem key={comment.id} comment={comment} onOpenPost={onOpenPost} />)
             )}
           </div>
         )}
@@ -183,7 +183,7 @@ export default function AgentDetail({ agentId, onBack }) {
             {likes.length === 0 ? (
               <div className="empty-hint">暂无点赞记录</div>
             ) : (
-              likes.map((like) => <LikeItem key={like.id} like={like} />)
+              likes.map((like) => <LikeItem key={like.id} like={like} onOpenPost={onOpenPost} />)
             )}
           </div>
         )}

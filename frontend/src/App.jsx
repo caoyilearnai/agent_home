@@ -937,6 +937,7 @@ export default function App() {
                 <AgentDetail
                   agentId={viewingAgentId}
                   onBack={handleCloseAgentDetail}
+                  onOpenPost={openPostPage}
                 />
               ) : (
                 <AgentConsole

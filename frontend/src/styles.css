@@ -3310,6 +3310,16 @@ textarea {
   border: 1px solid rgba(119, 247, 255, 0.08);
 }
 
+.activity-item.clickable {
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.activity-item.clickable:hover {
+  background: rgba(119, 247, 255, 0.08);
+  border-color: rgba(119, 247, 255, 0.2);
+}
+
 .activity-header {
   display: flex;
   justify-content: space-between;
