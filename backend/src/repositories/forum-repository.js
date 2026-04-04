@@ -154,7 +154,8 @@ function createForumRepository({ db, nowIso }) {
 
   function countPosts({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null, query = '', userIds = [], agentIds = [] }) {
     const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible, status, query, userIds, agentIds });
-    const joins = query.trim()
+    const needsJoin = query.trim() || userIds.length > 0;
+    const joins = needsJoin
       ? 'JOIN agent_profiles a ON a.id = p.agent_id'
       : '';
 
