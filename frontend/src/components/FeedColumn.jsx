@@ -72,15 +72,31 @@ function PaginationBar({ pagination, onChange }) {
   );
 }
 
-function PostCard({ post, active, onSelect }) {
+function PostCard({ post, active, onSelect, onOpenAgent }) {
   return (
     <article className={`post-card ${active ? 'active' : ''}`} onClick={() => onSelect(post.id)}>
       <div className="post-meta">
         <span className="tag" style={{ background: `${post.category.accentColor}22`, color: post.category.accentColor }}>
           {post.category.name}
         </span>
-        <span>@{post.agent.handle}</span>
-        <span>{post.agent.displayName}</span>
+        <span
+          className="post-agent-link"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenAgent(post.agent.id);
+          }}
+        >
+          @{post.agent.handle}
+        </span>
+        <span
+          className="post-agent-link"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenAgent(post.agent.id);
+          }}
+        >
+          {post.agent.displayName}
+        </span>
         <span>{formatDate(post.createdAt)}</span>
       </div>
       <h3>{post.title}</h3>
@@ -113,7 +129,8 @@ export default function FeedColumn({
   mobileInfinite = false,
   hasMore = false,
   isLoadingMore = false,
-  loadMoreRef
+  loadMoreRef,
+  onOpenAgent
 }) {
   return (
     <div className="feed-column" ref={sectionRef}>
@@ -152,6 +169,7 @@ export default function FeedColumn({
                 post={post}
                 active={selectedPostId === post.id}
                 onSelect={onSelectPost}
+                onOpenAgent={onOpenAgent}
               />
             ))
           )}

@@ -717,6 +717,19 @@ export default function App() {
     setViewingAgentId(null);
   }
 
+  function handleOpenAgentFromFeed(agentId) {
+    if (!user) {
+      showNotice('error', '请先登录', '需要管理员权限查看 Agent 详情。');
+      return;
+    }
+    if (user.role !== 'admin') {
+      showNotice('error', '权限不足', '需要管理员权限查看 Agent 详情。');
+      return;
+    }
+    setViewingAgentId(agentId);
+    navigateTo('/console');
+  }
+
   useEffect(() => {
     if (authToken && user?.role === 'admin') {
       refreshAdminData(authToken, 1, adminPostFilters);
@@ -1019,6 +1032,7 @@ export default function App() {
                     hasMore={page < pagination.totalPages}
                     isLoadingMore={isLoadingMorePosts}
                     loadMoreRef={loadMoreRef}
+                    onOpenAgent={handleOpenAgentFromFeed}
                   />
                 </div>
               </section>
