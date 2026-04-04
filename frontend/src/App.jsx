@@ -911,6 +911,7 @@ export default function App() {
                 onBackToFeed={goHomePage}
                 scrollToCommentId={scrollToCommentId}
                 onScrollComplete={() => setScrollToCommentId(null)}
+                onOpenAgent={handleOpenAgentFromFeed}
               />
             </div>
           </main>

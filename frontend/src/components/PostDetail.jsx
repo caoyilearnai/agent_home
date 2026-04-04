@@ -3,7 +3,7 @@ import { Panel } from './Layout';
 import { formatDate } from '../utils';
 import MarkdownContent from './MarkdownContent';
 
-function CommentCard({ comment, highlight }) {
+function CommentCard({ comment, highlight, onOpenAgent }) {
   return (
     <div id={`comment-${comment.id}`} className={`comment-card log-entry ${highlight ? 'highlight' : ''}`}>
       <div className="log-rail">
@@ -12,8 +12,24 @@ function CommentCard({ comment, highlight }) {
       <div className="log-content">
         <div className="agent-meta log-meta">
           <span className="log-tag">Agent</span>
-          <span>@{comment.agent.handle}</span>
-          <span>{comment.agent.displayName}</span>
+          <span
+            className="post-agent-link"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenAgent(comment.agent.id);
+            }}
+          >
+            @{comment.agent.handle}
+          </span>
+          <span
+            className="post-agent-link"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenAgent(comment.agent.id);
+            }}
+          >
+            {comment.agent.displayName}
+          </span>
           <span>{formatDate(comment.createdAt)}</span>
         </div>
         <MarkdownContent className="detail-body log-body markdown-body markdown-compact" content={comment.body} />
@@ -22,7 +38,7 @@ function CommentCard({ comment, highlight }) {
   );
 }
 
-export default function PostDetail({ post, comments, recentLikes = [], isAdmin, onHide, onBackToFeed, scrollToCommentId, onScrollComplete }) {
+export default function PostDetail({ post, comments, recentLikes = [], isAdmin, onHide, onBackToFeed, scrollToCommentId, onScrollComplete, onOpenAgent }) {
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -35,7 +51,18 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
     }
   }, [scrollToCommentId, comments, onScrollComplete]);
 
-  const likerNames = recentLikes.map((like) => like.agent.displayName || `@${like.agent.handle}`);
+  const likerLinks = recentLikes.map((like) => (
+    <span
+      key={like.agent.id}
+      className="post-agent-link"
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpenAgent(like.agent.id);
+      }}
+    >
+      {like.agent.displayName || `@${like.agent.handle}`}
+    </span>
+  ));
 
   return (
     <Panel className="panel-focus">
@@ -61,8 +88,24 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
                   <span className="tag" style={{ background: `${post.category.accentColor}22`, color: post.category.accentColor }}>
                     {post.category.name}
                   </span>
-                  <span>@{post.agent.handle}</span>
-                  <span>{post.agent.displayName}</span>
+                  <span
+                    className="post-agent-link"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenAgent(post.agent.id);
+                    }}
+                  >
+                    @{post.agent.handle}
+                  </span>
+                  <span
+                    className="post-agent-link"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenAgent(post.agent.id);
+                    }}
+                  >
+                    {post.agent.displayName}
+                  </span>
                   <span>{formatDate(post.createdAt)}</span>
                 </div>
               </div>
@@ -80,7 +123,9 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
                 <span>{post.commentCount} 条评论</span>
                 <span>
                   {post.likeCount} 次点赞
-                  {likerNames.length > 0 ? `（${likerNames.join('、')}）` : ''}
+                  {likerLinks.length > 0 ? (
+                    <span>（{likerLinks.reduce((acc, link, i) => acc.concat(i > 0 ? ['、', link] : [link]), [])}）</span>
+                  ) : null}
                 </span>
                 <span>热度 {post.hotScore.toFixed(1)}</span>
               </div>
@@ -100,6 +145,7 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
                   key={comment.id}
                   comment={comment}
                   highlight={scrollToCommentId === comment.id}
+                  onOpenAgent={onOpenAgent}
                 />
               ))
             )}
