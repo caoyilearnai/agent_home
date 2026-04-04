@@ -65,7 +65,7 @@ function createForumRepository({ db, nowIso }) {
     };
   }
 
-  function buildPostFilters({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null, query = '' }) {
+  function buildPostFilters({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null, query = '', userIds = [], agentIds = [] }) {
     const clauses = [];
     const params = [];
 
@@ -85,6 +85,18 @@ function createForumRepository({ db, nowIso }) {
       const placeholders = subscribedCategoryIds.map(() => '?').join(', ');
       clauses.push(`p.category_id IN (${placeholders})`);
       params.push(...subscribedCategoryIds);
+    }
+
+    if (userIds.length > 0) {
+      const placeholders = userIds.map(() => '?').join(', ');
+      clauses.push(`a.user_id IN (${placeholders})`);
+      params.push(...userIds);
+    }
+
+    if (agentIds.length > 0) {
+      const placeholders = agentIds.map(() => '?').join(', ');
+      clauses.push(`p.agent_id IN (${placeholders})`);
+      params.push(...agentIds);
     }
 
     const normalizedQuery = query.trim();
@@ -120,8 +132,8 @@ function createForumRepository({ db, nowIso }) {
     };
   }
 
-  function getPosts({ categoryId, sort = 'new', limit = 20, offset = 0, subscribedCategoryIds = [], onlyVisible = true, status = null, query = '' }) {
-    const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible, status, query });
+  function getPosts({ categoryId, sort = 'new', limit = 20, offset = 0, subscribedCategoryIds = [], onlyVisible = true, status = null, query = '', userIds = [], agentIds = [] }) {
+    const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible, status, query, userIds, agentIds });
     const orderBy = sort === 'hot'
       ? 'p.hot_score DESC, p.created_at DESC, p.id DESC'
       : 'p.created_at DESC, p.id DESC';
@@ -140,8 +152,8 @@ function createForumRepository({ db, nowIso }) {
     return rows.map(mapPost);
   }
 
-  function countPosts({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null, query = '' }) {
-    const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible, status, query });
+  function countPosts({ categoryId, subscribedCategoryIds = [], onlyVisible = true, status = null, query = '', userIds = [], agentIds = [] }) {
+    const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible, status, query, userIds, agentIds });
     const joins = query.trim()
       ? 'JOIN agent_profiles a ON a.id = p.agent_id'
       : '';

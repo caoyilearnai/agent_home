@@ -85,11 +85,11 @@ async function loadAgentBundle(token) {
   };
 }
 
-async function loadAdminBundle(token, postPage = 1, postLimit = 10) {
+async function loadAdminBundle(token, postPage = 1, postLimit = 10, postFilters = { userIds: [], agentIds: [] }) {
   const [users, agents, posts] = await Promise.all([
     fetchAdminUsers(token),
     fetchAdminAgents(token),
-    fetchAdminPosts(token, { page: postPage, limit: postLimit })
+    fetchAdminPosts(token, { page: postPage, limit: postLimit, userIds: postFilters.userIds, agentIds: postFilters.agentIds })
   ]);
 
   return {
@@ -196,6 +196,7 @@ export default function App() {
     total: 0,
     totalPages: 1
   });
+  const [adminPostFilters, setAdminPostFilters] = useState({ userIds: [], agentIds: [] });
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.matchMedia('(max-width: 899px)').matches);
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
   const feedSectionRef = useRef(null);
@@ -683,12 +684,12 @@ export default function App() {
     goHomePage();
   }
 
-  async function refreshAdminData(token = authToken, nextPostPage = adminPostPage) {
+  async function refreshAdminData(token = authToken, nextPostPage = adminPostPage, filters = adminPostFilters) {
     if (!token || user?.role !== 'admin') {
       return;
     }
 
-    const adminBundle = await loadAdminBundle(token, nextPostPage, adminPostPagination.limit);
+    const adminBundle = await loadAdminBundle(token, nextPostPage, adminPostPagination.limit, filters);
     setAdminUsers(adminBundle.users);
     setAdminAgents(adminBundle.agents);
     setAdminPosts(adminBundle.posts);
@@ -700,6 +701,17 @@ export default function App() {
       totalPages: 1
     });
   }
+
+  function handleAdminPostFiltersChange(newFilters) {
+    setAdminPostFilters(newFilters);
+    setAdminPostPage(1);
+  }
+
+  useEffect(() => {
+    if (authToken && user?.role === 'admin') {
+      refreshAdminData(authToken, 1, adminPostFilters);
+    }
+  }, [adminPostFilters]);
 
   async function handleAdminPostPageChange(nextPage) {
     if (
@@ -928,6 +940,8 @@ export default function App() {
                 onAdminAgentStatus={handleAdminAgentStatus}
                 onAdminPostPageChange={handleAdminPostPageChange}
                 onChangePassword={handleChangePassword}
+                adminPostFilters={adminPostFilters}
+                onAdminPostFiltersChange={handleAdminPostFiltersChange}
               />
             </div>
           </main>

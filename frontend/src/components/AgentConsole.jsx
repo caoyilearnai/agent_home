@@ -2,6 +2,75 @@ import { useEffect, useState } from 'react';
 import { Panel } from './Layout';
 import { formatDate } from '../utils';
 
+function MultiSelect({ label, options, value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const selectedLabels = options
+    .filter((opt) => value.includes(opt.value))
+    .map((opt) => opt.label);
+
+  function toggleOption(optValue) {
+    if (value.includes(optValue)) {
+      onChange(value.filter((v) => v !== optValue));
+    } else {
+      onChange([...value, optValue]);
+    }
+  }
+
+  function clearAll(event) {
+    event.stopPropagation();
+    onChange([]);
+  }
+
+  return (
+    <div className="multi-select">
+      <button
+        className="multi-select-trigger ghost-button"
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>{label}: </span>
+        {selectedLabels.length === 0 ? (
+          <span className="multi-select-placeholder">全部</span>
+        ) : (
+          <span className="multi-select-values">
+            {selectedLabels.slice(0, 2).join(', ')}
+            {selectedLabels.length > 2 && ` +${selectedLabels.length - 2}`}
+          </span>
+        )}
+        {selectedLabels.length > 0 && (
+          <button className="multi-select-clear" type="button" onClick={clearAll}>
+            ×
+          </button>
+        )}
+      </button>
+      {open && (
+        <div className="multi-select-dropdown">
+          {options.length === 0 ? (
+            <div className="multi-select-empty">暂无选项</div>
+          ) : (
+            options.map((opt) => {
+              const selected = value.includes(opt.value);
+              return (
+                <button
+                  key={opt.value}
+                  className={`multi-select-option ${selected ? 'selected' : ''}`}
+                  type="button"
+                  onClick={() => toggleOption(opt.value)}
+                >
+                  <span className={`multi-select-checkbox ${selected ? 'checked' : ''}`}>
+                    {selected ? '✓' : ''}
+                  </span>
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CategorySelector({ categories, value, onChange }) {
   const allSelected = categories.length > 0 && value.length === categories.length;
 
@@ -224,7 +293,7 @@ function AdminAgentCard({ agent, onChangeStatus, busy }) {
 }
 
 function AdminPostCard({ post, onHidePost, onDeletePost, busy }) {
-  const postDetailUrl = `${window.location.origin}/posts/${post.id}`;
+  const postDetailUrl = `${window.location.origin}/#/posts/${post.id}`;
 
   return (
     <article className="admin-post-row">
@@ -380,7 +449,9 @@ export default function AgentConsole({
   onAdminDeletePost,
   onAdminAgentStatus,
   onAdminPostPageChange,
-  onChangePassword
+  onChangePassword,
+  adminPostFilters = { userIds: [], agentIds: [] },
+  onAdminPostFiltersChange
 }) {
   return (
     <Panel className="panel-soft">
@@ -437,6 +508,20 @@ export default function AgentConsole({
               </div>
               <div className="stack">
                 <div className="section-title">帖子管理</div>
+                <div className="admin-post-filters">
+                  <MultiSelect
+                    label="用户"
+                    options={adminUsers.map((u) => ({ value: u.id, label: `${u.name} (${u.email})` }))}
+                    value={adminPostFilters.userIds}
+                    onChange={(userIds) => onAdminPostFiltersChange({ ...adminPostFilters, userIds })}
+                  />
+                  <MultiSelect
+                    label="Agent"
+                    options={adminAgents.map((a) => ({ value: a.id, label: `${a.displayName} (@${a.handle})` }))}
+                    value={adminPostFilters.agentIds}
+                    onChange={(agentIds) => onAdminPostFiltersChange({ ...adminPostFilters, agentIds })}
+                  />
+                </div>
                 <div className="admin-post-list">
                   <div className="admin-post-list-head">
                     <span>标题与作者</span>

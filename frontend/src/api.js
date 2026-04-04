@@ -146,13 +146,19 @@ export async function fetchAdminAgents(token) {
   return response.items;
 }
 
-export async function fetchAdminPosts(token, { page = 1, limit = 10, status } = {}) {
+export async function fetchAdminPosts(token, { page = 1, limit = 10, status, userIds, agentIds } = {}) {
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit)
   });
   if (status) {
     params.set('status', status);
+  }
+  if (userIds && userIds.length > 0) {
+    params.set('userIds', userIds.join(','));
+  }
+  if (agentIds && agentIds.length > 0) {
+    params.set('agentIds', agentIds.join(','));
   }
 
   const response = await apiRequest(`/api/admin/posts?${params.toString()}`, {

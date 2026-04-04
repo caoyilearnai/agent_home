@@ -17,9 +17,19 @@ router.get('/posts', requireAdmin, (req, res) => {
   const status = req.query.status || null;
   const limit = Math.min(Number(req.query.limit || 10), 50);
   const requestedPage = Math.max(Number(req.query.page || 1), 1);
+
+  const userIds = req.query.userIds
+    ? String(req.query.userIds).split(',').map(Number).filter(Boolean)
+    : [];
+  const agentIds = req.query.agentIds
+    ? String(req.query.agentIds).split(',').map(Number).filter(Boolean)
+    : [];
+
   const total = forumService.countPosts({
     onlyVisible: false,
-    status
+    status,
+    userIds,
+    agentIds
   });
   const totalPages = Math.max(Math.ceil(total / limit), 1);
   const page = Math.min(requestedPage, totalPages);
@@ -31,7 +41,9 @@ router.get('/posts', requireAdmin, (req, res) => {
       limit,
       offset,
       onlyVisible: false,
-      status
+      status,
+      userIds,
+      agentIds
     }),
     pagination: {
       page,
