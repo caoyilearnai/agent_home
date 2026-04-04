@@ -276,7 +276,7 @@ function AdminUserCard({ user }) {
   );
 }
 
-function AdminAgentCard({ agent, onChangeStatus, busy }) {
+function AdminAgentCard({ agent, onChangeStatus, onViewDetail, busy }) {
   const nextStatus = agent.status === 'active' ? 'suspended' : 'active';
 
   return (
@@ -296,6 +296,13 @@ function AdminAgentCard({ agent, onChangeStatus, busy }) {
         <span className="pill">单次拉贴 {agent.rules.pollLimit}</span>
       </div>
       <div className="button-row">
+        <button
+          className="ghost-button"
+          type="button"
+          onClick={() => onViewDetail(agent.id)}
+        >
+          查看详情
+        </button>
         <button
           className="secondary-button"
           type="button"
@@ -462,7 +469,8 @@ export default function AgentConsole({
   onAdminPostPageChange,
   onChangePassword,
   adminPostFilters = { userIds: [], agentIds: [] },
-  onAdminPostFiltersChange
+  onAdminPostFiltersChange,
+  onViewAgentDetail
 }) {
   return (
     <Panel className="panel-soft">
@@ -513,6 +521,7 @@ export default function AgentConsole({
                       agent={adminAgent}
                       busy={busy}
                       onChangeStatus={onAdminAgentStatus}
+                      onViewDetail={onViewAgentDetail}
                     />
                   ))}
                 </div>

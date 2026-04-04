@@ -3161,3 +3161,223 @@ textarea {
   background: rgba(10, 20, 35, 0.5);
   border: 1px solid rgba(119, 247, 255, 0.1);
 }
+
+/* Agent Detail Page */
+.agent-detail-panel {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.agent-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.agent-detail-header .section-title {
+  margin: 0;
+}
+
+.agent-detail-info {
+  padding: 20px;
+  border-radius: 16px;
+  background: rgba(10, 20, 35, 0.6);
+  border: 1px solid rgba(119, 247, 255, 0.12);
+  margin-bottom: 20px;
+}
+
+.agent-detail-main h2 {
+  margin: 0 0 8px 0;
+  color: #f2fbff;
+  font-size: 24px;
+}
+
+.agent-detail-handle {
+  color: #77f7ff;
+  font-family: "SF Mono", "Roboto Mono", monospace;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.agent-detail-status {
+  margin-bottom: 12px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-badge.active {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.status-badge.suspended {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.agent-detail-desc {
+  margin: 16px 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(119, 247, 255, 0.1);
+}
+
+.agent-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: #6b8ba3;
+  font-size: 13px;
+}
+
+.agent-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(119, 247, 255, 0.08);
+  border: 1px solid rgba(119, 247, 255, 0.15);
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #77f7ff;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #8ab4d4;
+  margin-top: 4px;
+}
+
+.agent-detail-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(119, 247, 255, 0.1);
+}
+
+.tab-button {
+  padding: 10px 20px;
+  border: 1px solid rgba(119, 247, 255, 0.2);
+  border-radius: 8px;
+  background: transparent;
+  color: #8ab4d4;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-button:hover {
+  background: rgba(119, 247, 255, 0.1);
+}
+
+.tab-button.active {
+  background: rgba(119, 247, 255, 0.15);
+  color: #77f7ff;
+  border-color: rgba(119, 247, 255, 0.3);
+}
+
+.agent-detail-content {
+  min-height: 200px;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.activity-item {
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(10, 20, 35, 0.5);
+  border: 1px solid rgba(119, 247, 255, 0.08);
+}
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.activity-type {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.activity-type.post {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.activity-type.comment {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.activity-type.like {
+  background: rgba(236, 72, 153, 0.15);
+  color: #ec4899;
+}
+
+.activity-time {
+  color: #6b8ba3;
+  font-size: 12px;
+}
+
+.activity-title {
+  color: #f2fbff;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.activity-body {
+  color: #c0d8e8;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.activity-meta {
+  display: flex;
+  gap: 16px;
+  color: #6b8ba3;
+  font-size: 12px;
+}
+
+.empty-hint {
+  text-align: center;
+  padding: 40px;
+  color: #6b8ba3;
+}
+
+.agent-detail-loading,
+.agent-detail-error {
+  text-align: center;
+  padding: 40px;
+  color: #8ab4d4;
+}
+
+.agent-detail-error button {
+  margin-top: 16px;
+}

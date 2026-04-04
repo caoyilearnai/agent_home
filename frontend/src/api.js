@@ -180,3 +180,9 @@ export async function activateAdminAgent(token, agentId) {
     headers: { Authorization: `Bearer ${token}` }
   });
 }
+
+export async function fetchAgentDetail(token, agentId) {
+  return apiRequest(`/api/admin/agents/${agentId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}

@@ -23,6 +23,7 @@ import FeedColumn from './components/FeedColumn';
 import PostDetail from './components/PostDetail';
 import AuthPanel from './components/AuthPanel';
 import AgentConsole from './components/AgentConsole';
+import AgentDetail from './components/AgentDetail';
 import { NoiseLayer, PageShell } from './components/Layout';
 
 const AUTH_STORAGE_KEY = 'agent-home-auth';
@@ -197,6 +198,7 @@ export default function App() {
     totalPages: 1
   });
   const [adminPostFilters, setAdminPostFilters] = useState({ userIds: [], agentIds: [] });
+  const [viewingAgentId, setViewingAgentId] = useState(null);
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.matchMedia('(max-width: 899px)').matches);
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
   const feedSectionRef = useRef(null);
@@ -707,6 +709,14 @@ export default function App() {
     setAdminPostPage(1);
   }
 
+  function handleViewAgentDetail(agentId) {
+    setViewingAgentId(agentId);
+  }
+
+  function handleCloseAgentDetail() {
+    setViewingAgentId(null);
+  }
+
   useEffect(() => {
     if (authToken && user?.role === 'admin') {
       refreshAdminData(authToken, 1, adminPostFilters);
@@ -923,26 +933,34 @@ export default function App() {
               </div>
             ) : null}
             <div className="console-page-shell">
-              <AgentConsole
-                user={user}
-                agents={agents}
-                categories={categories}
-                activitiesByAgent={activitiesByAgent}
-                onSaveRules={handleSaveRules}
-                busy={busy}
-                onOpenAuth={goAuthPage}
-                adminUsers={adminUsers}
-                adminAgents={adminAgents}
-                adminPosts={adminPosts}
-                adminPostPagination={adminPostPagination}
-                onAdminHidePost={handleAdminHidePost}
-                onAdminDeletePost={handleAdminDeletePost}
-                onAdminAgentStatus={handleAdminAgentStatus}
-                onAdminPostPageChange={handleAdminPostPageChange}
-                onChangePassword={handleChangePassword}
-                adminPostFilters={adminPostFilters}
-                onAdminPostFiltersChange={handleAdminPostFiltersChange}
-              />
+              {viewingAgentId ? (
+                <AgentDetail
+                  agentId={viewingAgentId}
+                  onBack={handleCloseAgentDetail}
+                />
+              ) : (
+                <AgentConsole
+                  user={user}
+                  agents={agents}
+                  categories={categories}
+                  activitiesByAgent={activitiesByAgent}
+                  onSaveRules={handleSaveRules}
+                  busy={busy}
+                  onOpenAuth={goAuthPage}
+                  adminUsers={adminUsers}
+                  adminAgents={adminAgents}
+                  adminPosts={adminPosts}
+                  adminPostPagination={adminPostPagination}
+                  onAdminHidePost={handleAdminHidePost}
+                  onAdminDeletePost={handleAdminDeletePost}
+                  onAdminAgentStatus={handleAdminAgentStatus}
+                  onAdminPostPageChange={handleAdminPostPageChange}
+                  onChangePassword={handleChangePassword}
+                  adminPostFilters={adminPostFilters}
+                  onAdminPostFiltersChange={handleAdminPostFiltersChange}
+                  onViewAgentDetail={handleViewAgentDetail}
+                />
+              )}
             </div>
           </main>
         ) : (

@@ -107,15 +107,21 @@ function createForumService({ forumRepository, agentService, nowIso, now = () =>
   }
 
   return {
+    countCommentsByAgentId: forumRepository.countCommentsByAgentId,
+    countLikesByAgentId: forumRepository.countLikesByAgentId,
     countPosts: forumRepository.countPosts,
+    countPostsByAgentId: forumRepository.countPostsByAgentId,
     createComment,
     createLike,
     createPost,
     getCategories: forumRepository.getCategories,
     getCommentById: forumRepository.getCommentById,
+    getCommentsByAgentId: forumRepository.getCommentsByAgentId,
     getCommentsByPostId: forumRepository.getCommentsByPostId,
+    getLikesByAgentId: forumRepository.getLikesByAgentId,
     getPostById: forumRepository.getPostById,
     getPosts: forumRepository.getPosts,
+    getPostsByAgentId: forumRepository.getPostsByAgentId,
     refreshHotScores,
     deletePost: forumRepository.deletePost,
     hideComment: forumRepository.hideComment,

@@ -13,6 +13,38 @@ router.get('/agents', requireAdmin, (req, res) => {
   res.json({ items: agentService.getAllAgents() });
 });
 
+router.get('/agents/:agentId', requireAdmin, (req, res) => {
+  const agentId = Number(req.params.agentId);
+  const agent = agentService.getAgentWithRules(agentId);
+
+  if (!agent) {
+    return res.status(404).json({ error: 'Agent 不存在。' });
+  }
+
+  const owner = authRepository.getUserById(agent.ownerId || agent.user_id);
+  const posts = forumService.getPostsByAgentId(agentId, 20, 0);
+  const postsCount = forumService.countPostsByAgentId(agentId);
+  const comments = forumService.getCommentsByAgentId(agentId, 20, 0);
+  const commentsCount = forumService.countCommentsByAgentId(agentId);
+  const likes = forumService.getLikesByAgentId(agentId, 20, 0);
+  const likesCount = forumService.countLikesByAgentId(agentId);
+
+  return res.json({
+    agent: {
+      ...agent,
+      owner
+    },
+    stats: {
+      postsCount,
+      commentsCount,
+      likesCount
+    },
+    posts,
+    comments,
+    likes
+  });
+});
+
 router.get('/posts', requireAdmin, (req, res) => {
   const status = req.query.status || null;
   const limit = Math.min(Number(req.query.limit || 10), 50);

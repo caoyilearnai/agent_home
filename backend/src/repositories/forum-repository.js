@@ -391,18 +391,120 @@ function createForumRepository({ db, nowIso }) {
     `).run(...allowedSlugs);
   }
 
+  function getPostsByAgentId(agentId, limit = 20, offset = 0) {
+    const rows = db.prepare(`
+      SELECT p.*, c.name AS category_name, c.slug AS category_slug, c.accent_color
+      FROM posts p
+      JOIN topic_categories c ON c.id = p.category_id
+      WHERE p.agent_id = ?
+      ORDER BY p.created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(agentId, limit, offset);
+
+    return rows.map(mapPost);
+  }
+
+  function countPostsByAgentId(agentId) {
+    const row = db.prepare(`
+      SELECT COUNT(*) AS total
+      FROM posts
+      WHERE agent_id = ?
+    `).get(agentId);
+
+    return row.total;
+  }
+
+  function getCommentsByAgentId(agentId, limit = 20, offset = 0) {
+    const rows = db.prepare(`
+      SELECT c.id, c.body, c.status, c.like_count AS likeCount, c.created_at AS createdAt,
+             p.id AS postId, p.title AS postTitle,
+             cat.name AS categoryName
+      FROM comments c
+      JOIN posts p ON p.id = c.post_id
+      JOIN topic_categories cat ON cat.id = p.category_id
+      WHERE c.agent_id = ?
+      ORDER BY c.created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(agentId, limit, offset);
+
+    return rows.map((row) => ({
+      id: row.id,
+      body: row.body,
+      status: row.status,
+      likeCount: row.likeCount,
+      createdAt: row.createdAt,
+      post: {
+        id: row.postId,
+        title: row.postTitle
+      },
+      category: {
+        name: row.categoryName
+      }
+    }));
+  }
+
+  function countCommentsByAgentId(agentId) {
+    const row = db.prepare(`
+      SELECT COUNT(*) AS total
+      FROM comments
+      WHERE agent_id = ?
+    `).get(agentId);
+
+    return row.total;
+  }
+
+  function getLikesByAgentId(agentId, limit = 20, offset = 0) {
+    const rows = db.prepare(`
+      SELECT l.id, l.target_type AS targetType, l.target_id AS targetId, l.created_at AS createdAt,
+             CASE
+               WHEN l.target_type = 'post' THEN p.title
+               WHEN l.target_type = 'comment' THEN c.body
+             END AS targetTitle
+      FROM like_records l
+      LEFT JOIN posts p ON p.id = l.target_id AND l.target_type = 'post'
+      LEFT JOIN comments c ON c.id = l.target_id AND l.target_type = 'comment'
+      WHERE l.agent_id = ?
+      ORDER BY l.created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(agentId, limit, offset);
+
+    return rows.map((row) => ({
+      id: row.id,
+      targetType: row.targetType,
+      targetId: row.targetId,
+      createdAt: row.createdAt,
+      targetTitle: row.targetTitle ? row.targetTitle.slice(0, 100) : null
+    }));
+  }
+
+  function countLikesByAgentId(agentId) {
+    const row = db.prepare(`
+      SELECT COUNT(*) AS total
+      FROM like_records
+      WHERE agent_id = ?
+    `).get(agentId);
+
+    return row.total;
+  }
+
   return {
+    countCommentsByAgentId,
+    countLikesByAgentId,
     countPosts,
+    countPostsByAgentId,
     deletePost,
     getCategories,
     getCategoryBySlug,
     getCommentById,
+    getCommentsByAgentId,
     getCommentsByPostId,
     getContentTarget,
     getHotScoreCandidates,
+    getLikesByAgentId,
     getPostById,
     getPostMetrics,
     getPosts,
+    getPostsByAgentId,
     hideComment,
     hidePost,
     incrementPostCommentCount,
