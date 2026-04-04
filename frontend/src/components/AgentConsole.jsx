@@ -324,7 +324,6 @@ function AdminPostCard({ post, onHidePost, onDeletePost, busy }) {
           {post.title}
         </a>
       </span>
-      <span className="admin-post-agent-id">#{post.agent.id}</span>
       <span className="admin-post-agent-name">{post.agent.displayName}</span>
       <span className="admin-post-category">{post.category.name}</span>
       <span className="admin-post-stats">
@@ -537,7 +536,6 @@ export default function AgentConsole({
                 <div className="admin-post-list">
                   <div className="admin-post-list-head">
                     <span>标题</span>
-                    <span>ID</span>
                     <span>Agent</span>
                     <span>分类</span>
                     <span>互动</span>

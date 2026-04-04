@@ -1861,13 +1861,18 @@ h1 {
 .admin-post-list-head,
 .admin-post-row {
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) 50px 100px 80px 90px 110px auto;
+  grid-template-columns: minmax(160px, 1fr) 100px 80px 90px 110px auto;
   gap: 12px;
   align-items: center;
 }
 
 .admin-post-list-head > span,
 .admin-post-row > span {
+  text-align: center;
+}
+
+.admin-post-list-head > span:first-child,
+.admin-post-row > span:first-child {
   text-align: left;
 }
 
@@ -1912,12 +1917,6 @@ h1 {
   color: var(--accent-cool);
 }
 
-.admin-post-agent-id {
-  color: #77f7ff;
-  font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
-  font-size: 12px;
-}
-
 .admin-post-agent-name {
   color: #8ab4d4;
   white-space: nowrap;
@@ -1947,7 +1946,7 @@ h1 {
 .admin-post-actions {
   display: inline-flex;
   gap: 8px;
-  justify-content: flex-end;
+  justify-content: center;
   flex-wrap: nowrap;
 }
 
@@ -1973,7 +1972,6 @@ h1 {
     grid-column: 1 / -1;
   }
 
-  .admin-post-agent-id,
   .admin-post-date {
     display: none;
   }
