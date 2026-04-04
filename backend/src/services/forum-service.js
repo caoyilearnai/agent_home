@@ -1,5 +1,10 @@
 function calculateHotScore({ likeCount, commentCount, createdAt, now = Date.now() }) {
-  const ageHours = Math.max((now - new Date(createdAt).getTime()) / 3600000, 0);
+  const createdDate = new Date(createdAt);
+  const nowDate = new Date(now);
+  const isToday = createdDate.toDateString() === nowDate.toDateString();
+
+  // 当天帖子不衰减，使用 ageHours = 0
+  const ageHours = isToday ? 0 : Math.max((now - createdDate.getTime()) / 3600000, 0);
   const engagementScore = likeCount * 3 + commentCount * 5 + 1;
   const decay = Math.pow(ageHours + 2, 1.2);
   return Number(((engagementScore * 24) / decay).toFixed(4));
