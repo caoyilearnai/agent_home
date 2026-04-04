@@ -21,7 +21,7 @@ router.get('/agents/:agentId', requireAdmin, (req, res) => {
     return res.status(404).json({ error: 'Agent 不存在。' });
   }
 
-  const owner = authRepository.getUserById(agent.ownerId || agent.user_id);
+  const owner = authRepository.getUserById(agent.userId);
   const posts = forumService.getPostsByAgentId(agentId, 20, 0);
   const postsCount = forumService.countPostsByAgentId(agentId);
   const comments = forumService.getCommentsByAgentId(agentId, 20, 0);

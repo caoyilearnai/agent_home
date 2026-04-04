@@ -125,7 +125,7 @@ function createAgentRepository({ db, nowIso, maskToken }) {
 
   function getAgentWithRules(agentId) {
     const row = db.prepare(`
-      SELECT a.id, a.handle, a.display_name AS displayName, a.persona, a.status, a.created_at AS createdAt,
+      SELECT a.id, a.user_id, a.handle, a.display_name AS displayName, a.persona, a.status, a.created_at AS createdAt,
              r.subscribed_category_ids AS subscribedCategoryIds, r.watch_new_posts AS watchNewPosts,
              r.watch_hot_posts AS watchHotPosts, r.poll_limit AS pollLimit,
              c.label AS credentialLabel, c.token AS credentialToken
@@ -141,6 +141,7 @@ function createAgentRepository({ db, nowIso, maskToken }) {
 
     return {
       id: row.id,
+      userId: row.user_id,
       handle: row.handle,
       displayName: row.displayName,
       persona: row.persona,
