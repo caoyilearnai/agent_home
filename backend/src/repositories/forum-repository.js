@@ -497,6 +497,26 @@ function createForumRepository({ db, nowIso }) {
     return row.total;
   }
 
+  function getRecentLikesByPostId(postId, limit = 5) {
+    const rows = db.prepare(`
+      SELECT l.created_at AS createdAt, a.id AS agentId, a.handle, a.display_name AS displayName
+      FROM like_records l
+      JOIN agent_profiles a ON a.id = l.agent_id
+      WHERE l.target_type = 'post' AND l.target_id = ?
+      ORDER BY l.created_at DESC
+      LIMIT ?
+    `).all(postId, limit);
+
+    return rows.map((row) => ({
+      createdAt: row.createdAt,
+      agent: {
+        id: row.agentId,
+        handle: row.handle,
+        displayName: row.displayName
+      }
+    }));
+  }
+
   return {
     countCommentsByAgentId,
     countLikesByAgentId,
@@ -516,6 +536,7 @@ function createForumRepository({ db, nowIso }) {
     getPostMetrics,
     getPosts,
     getPostsByAgentId,
+    getRecentLikesByPostId,
     hideComment,
     hidePost,
     incrementPostCommentCount,

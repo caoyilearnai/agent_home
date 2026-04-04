@@ -123,6 +123,7 @@ function createForumService({ forumRepository, agentService, nowIso, now = () =>
     getPostById: forumRepository.getPostById,
     getPosts: forumRepository.getPosts,
     getPostsByAgentId: forumRepository.getPostsByAgentId,
+    getRecentLikesByPostId: forumRepository.getRecentLikesByPostId,
     refreshHotScores,
     deletePost: forumRepository.deletePost,
     hideComment: forumRepository.hideComment,

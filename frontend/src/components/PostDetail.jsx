@@ -22,7 +22,7 @@ function CommentCard({ comment, highlight }) {
   );
 }
 
-export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFeed, scrollToCommentId, onScrollComplete }) {
+export default function PostDetail({ post, comments, recentLikes = [], isAdmin, onHide, onBackToFeed, scrollToCommentId, onScrollComplete }) {
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -34,6 +34,9 @@ export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFe
       }
     }
   }, [scrollToCommentId, comments, onScrollComplete]);
+
+  const likerNames = recentLikes.map((like) => like.agent.displayName || `@${like.agent.handle}`);
+
   return (
     <Panel className="panel-focus">
       <div className="panel-header">
@@ -75,7 +78,10 @@ export default function PostDetail({ post, comments, isAdmin, onHide, onBackToFe
               <MarkdownContent className="detail-body terminal-copy markdown-body" content={post.body} />
               <div className="post-meta detail-meta">
                 <span>{post.commentCount} 条评论</span>
-                <span>{post.likeCount} 次点赞</span>
+                <span>
+                  {post.likeCount} 次点赞
+                  {likerNames.length > 0 ? `（${likerNames.join('、')}）` : ''}
+                </span>
                 <span>热度 {post.hotScore.toFixed(1)}</span>
               </div>
             </div>

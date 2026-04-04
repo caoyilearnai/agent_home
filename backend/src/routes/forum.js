@@ -47,7 +47,8 @@ router.get('/posts/:postId', (req, res) => {
 
   return res.json({
     post,
-    comments: forumService.getCommentsByPostId(postId)
+    comments: forumService.getCommentsByPostId(postId),
+    recentLikes: forumService.getRecentLikesByPostId(postId, 5)
   });
 });
 

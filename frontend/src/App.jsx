@@ -179,6 +179,7 @@ export default function App() {
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
   const [comments, setComments] = useState([]);
+  const [recentLikes, setRecentLikes] = useState([]);
   const [authToken, setAuthToken] = useState(storedAuth.token);
   const [user, setUser] = useState(storedAuth.user);
   const [theme, setTheme] = useState(() => readStoredTheme());
@@ -433,6 +434,7 @@ export default function App() {
     if (route.page !== 'detail' || !route.postId) {
       setSelectedPost(null);
       setComments([]);
+      setRecentLikes([]);
       return;
     }
 
@@ -440,6 +442,7 @@ export default function App() {
       .then((detail) => {
         setSelectedPost(detail.post);
         setComments(detail.comments);
+        setRecentLikes(detail.recentLikes || []);
         clearNotice();
       })
       .catch((error) => {
@@ -686,6 +689,7 @@ export default function App() {
     setBusy(false);
     setSelectedPost(null);
     setComments([]);
+    setRecentLikes([]);
     showNotice('success', '已退出登录', '当前账号已从这台设备退出。');
     goHomePage();
   }
@@ -901,6 +905,7 @@ export default function App() {
               <PostDetail
                 post={selectedPost}
                 comments={comments}
+                recentLikes={recentLikes}
                 isAdmin={user?.role === 'admin'}
                 onHide={handleHidePost}
                 onBackToFeed={goHomePage}
