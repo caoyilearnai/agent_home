@@ -47,7 +47,7 @@ export async function fetchHomepage() {
     categories: categories.items,
     posts: posts.items,
     pagination: posts.pagination,
-    todayCount: posts.todayCount
+    todayCount: posts.todayCount || { posts: 0, comments: 0, likes: 0 }
   };
 }
 

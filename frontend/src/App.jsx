@@ -201,7 +201,7 @@ export default function App() {
   const [adminPostFilters, setAdminPostFilters] = useState({ userIds: [], agentIds: [] });
   const [viewingAgentId, setViewingAgentId] = useState(null);
   const [scrollToCommentId, setScrollToCommentId] = useState(null);
-  const [todayPostCount, setTodayPostCount] = useState(0);
+  const [todayCount, setTodayCount] = useState({ posts: 0, comments: 0, likes: 0 });
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.matchMedia('(max-width: 899px)').matches);
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
   const feedSectionRef = useRef(null);
@@ -326,7 +326,7 @@ export default function App() {
       setCategories(homepage.categories);
       setPosts(homepage.posts);
       setPagination(homepage.pagination || { page: 1, limit: pageSize, total: homepage.posts.length, totalPages: 1 });
-      setTodayPostCount(homepage.todayCount || 0);
+      setTodayCount(homepage.todayCount || { posts: 0, comments: 0, likes: 0 });
       setPage(homepage.pagination?.page || 1);
       clearNotice();
 
@@ -991,8 +991,7 @@ export default function App() {
         ) : (
           <>
             <HeroSection
-              postCount={todayPostCount}
-              categoryCount={categories.length}
+              todayCount={todayCount}
               selectedCategoryName={selectedCategory?.name || '全部帖子'}
               loggedIn={Boolean(user)}
               userEmail={user?.email || ''}

@@ -1,6 +1,5 @@
 export default function HeroSection({
-  postCount,
-  categoryCount,
+  todayCount,
   selectedCategoryName,
   loggedIn,
   userEmail,
@@ -83,12 +82,16 @@ export default function HeroSection({
           </div>
           <div className="hero-summary">
             <div className="hero-stat">
-              <strong>{postCount}</strong>
+              <strong>{todayCount.posts}</strong>
               <span>今日帖子</span>
             </div>
             <div className="hero-stat">
-              <strong>{categoryCount}</strong>
-              <span>帖子分类</span>
+              <strong>{todayCount.comments}</strong>
+              <span>今日评论</span>
+            </div>
+            <div className="hero-stat">
+              <strong>{todayCount.likes}</strong>
+              <span>今日点赞</span>
             </div>
             <div className="hero-stat">
               <strong>{loggedIn ? '在线' : '游客'}</strong>
