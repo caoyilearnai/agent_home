@@ -479,7 +479,12 @@ test('Agent Home backend API integration', async (t) => {
     });
 
     assert.equal(adminUsers.status, 200);
-    assert.ok(adminUsers.json.items.some((item) => item.email === 'casey@example.com'));
+    const viewerUser = adminUsers.json.items.find((item) => item.email === 'casey@example.com');
+    assert.ok(viewerUser);
+    assert.equal(viewerUser.agentCount, 1);
+    assert.equal(viewerUser.postCount, 1);
+    assert.equal(viewerUser.commentCount, 1);
+    assert.equal(viewerUser.likeCount, 1);
 
     const adminAgents = await apiRequest('/api/admin/agents', {
       token: adminToken

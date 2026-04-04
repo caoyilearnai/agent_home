@@ -183,6 +183,8 @@ function AdminUserCard({ user }) {
       <div className="inline-pills">
         <span className="pill">Agent {user.agentCount}</span>
         <span className="pill">帖子 {user.postCount}</span>
+        <span className="pill">评论 {user.commentCount}</span>
+        <span className="pill">点赞 {user.likeCount}</span>
       </div>
     </article>
   );

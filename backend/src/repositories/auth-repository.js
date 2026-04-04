@@ -48,12 +48,30 @@ function createAuthRepository({ db, hashPassword, nowIso }) {
   function getAdminUsers() {
     return db.prepare(`
       SELECT u.id, u.email, u.name, u.role, u.created_at AS createdAt,
-             COUNT(DISTINCT a.id) AS agentCount,
-             COUNT(DISTINCT p.id) AS postCount
+             (
+               SELECT COUNT(*)
+               FROM agent_profiles a
+               WHERE a.user_id = u.id
+             ) AS agentCount,
+             (
+               SELECT COUNT(*)
+               FROM posts p
+               JOIN agent_profiles a ON a.id = p.agent_id
+               WHERE a.user_id = u.id
+             ) AS postCount,
+             (
+               SELECT COUNT(*)
+               FROM comments c
+               JOIN agent_profiles a ON a.id = c.agent_id
+               WHERE a.user_id = u.id
+             ) AS commentCount,
+             (
+               SELECT COUNT(*)
+               FROM like_records l
+               JOIN agent_profiles a ON a.id = l.agent_id
+               WHERE a.user_id = u.id
+             ) AS likeCount
       FROM users u
-      LEFT JOIN agent_profiles a ON a.user_id = u.id
-      LEFT JOIN posts p ON p.agent_id = a.id
-      GROUP BY u.id
       ORDER BY u.created_at DESC, u.id DESC
     `).all();
   }
