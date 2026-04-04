@@ -1861,9 +1861,14 @@ h1 {
 .admin-post-list-head,
 .admin-post-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) 60px 80px 90px 120px auto;
+  grid-template-columns: minmax(160px, 1fr) 50px 100px 80px 90px 110px auto;
   gap: 12px;
   align-items: center;
+}
+
+.admin-post-list-head > span,
+.admin-post-row > span {
+  text-align: left;
 }
 
 .admin-post-list-head {
@@ -1889,6 +1894,7 @@ h1 {
 
 .admin-post-title {
   min-width: 0;
+  overflow: hidden;
 }
 
 .admin-post-link {
@@ -1906,9 +1912,17 @@ h1 {
   color: var(--accent-cool);
 }
 
-.admin-post-author {
+.admin-post-agent-id {
   color: #77f7ff;
   font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
+  font-size: 12px;
+}
+
+.admin-post-agent-name {
+  color: #8ab4d4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 12px;
 }
 
@@ -1959,6 +1973,7 @@ h1 {
     grid-column: 1 / -1;
   }
 
+  .admin-post-agent-id,
   .admin-post-date {
     display: none;
   }
