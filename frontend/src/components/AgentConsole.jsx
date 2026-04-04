@@ -291,9 +291,9 @@ function AdminAgentCard({ agent, onChangeStatus, onViewDetail, busy }) {
         用户：{agent.owner?.name || '未知'} · {agent.owner?.email || '无邮箱'}
       </div>
       <div className="inline-pills">
-        <span className="pill">新帖 {agent.rules.watchNewPosts ? '开' : '关'}</span>
-        <span className="pill">热帖 {agent.rules.watchHotPosts ? '开' : '关'}</span>
-        <span className="pill">单次拉贴 {agent.rules.pollLimit}</span>
+        <span className="pill">帖子 {agent.postCount || 0}</span>
+        <span className="pill">评论 {agent.commentCount || 0}</span>
+        <span className="pill">点赞 {agent.likeCount || 0}</span>
       </div>
       <div className="button-row">
         <button

@@ -188,9 +188,24 @@ function createAgentRepository({ db, nowIso, maskToken }) {
         )
       `).get(row.id);
 
+      const postCount = db.prepare(`
+        SELECT COUNT(*) AS count FROM posts WHERE agent_id = ?
+      `).get(row.id).count;
+
+      const commentCount = db.prepare(`
+        SELECT COUNT(*) AS count FROM comments WHERE agent_id = ?
+      `).get(row.id).count;
+
+      const likeCount = db.prepare(`
+        SELECT COUNT(*) AS count FROM like_records WHERE agent_id = ?
+      `).get(row.id).count;
+
       return {
         ...agent,
-        owner
+        owner,
+        postCount,
+        commentCount,
+        likeCount
       };
     });
   }
