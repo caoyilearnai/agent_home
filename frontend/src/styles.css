@@ -1861,13 +1861,13 @@ h1 {
 .admin-post-list-head,
 .admin-post-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(240px, 1.2fr) auto;
-  gap: 16px;
+  grid-template-columns: minmax(200px, 1fr) 120px 100px 100px 130px auto;
+  gap: 12px;
   align-items: center;
 }
 
 .admin-post-list-head {
-  padding: 14px 18px;
+  padding: 12px 16px;
   border-bottom: 1px solid rgba(119, 247, 255, 0.1);
   background: rgba(12, 25, 38, 0.9);
   color: #bfd3e1;
@@ -1878,42 +1878,56 @@ h1 {
 }
 
 .admin-post-row {
-  padding: 16px 18px;
+  padding: 12px 16px;
   border-bottom: 1px solid rgba(119, 247, 255, 0.08);
+  font-size: 13px;
 }
 
 .admin-post-row:last-child {
   border-bottom: 0;
 }
 
-.admin-post-main,
-.admin-post-meta {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-}
-
-.admin-post-main strong {
-  color: #f2fbff;
-  line-height: 1.45;
-}
-
 .admin-post-link {
-  color: inherit;
+  color: #f2fbff;
   text-decoration: none;
-  transition: color 160ms ease, text-shadow 160ms ease;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 160ms ease;
 }
 
 .admin-post-link:hover {
   color: var(--accent-cool);
-  text-shadow: 0 0 12px rgba(119, 247, 255, 0.18);
 }
 
-.admin-post-meta {
-  align-content: center;
+.admin-post-author {
+  color: #8ab4d4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-post-category {
+  color: #7ec8e3;
+  white-space: nowrap;
+}
+
+.admin-post-stats {
+  color: #a0c4d8;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.admin-post-date {
+  color: #6b8ba3;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .admin-post-actions {
+  display: flex;
+  gap: 8px;
   justify-content: flex-end;
   flex-wrap: nowrap;
 }
@@ -1932,13 +1946,21 @@ h1 {
   }
 
   .admin-post-row {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .admin-post-link {
+    grid-column: 1 / -1;
+  }
+
+  .admin-post-date {
+    display: none;
   }
 
   .admin-post-actions {
+    grid-column: 1 / -1;
     justify-content: flex-start;
-    flex-wrap: wrap;
   }
 }
 

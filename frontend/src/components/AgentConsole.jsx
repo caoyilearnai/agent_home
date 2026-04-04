@@ -314,29 +314,21 @@ function AdminPostCard({ post, onHidePost, onDeletePost, busy }) {
 
   return (
     <article className="admin-post-row">
-      <div className="admin-post-main">
-        <strong>
-          <a
-            className="admin-post-link"
-            href={postDetailUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {post.title}
-          </a>
-        </strong>
-        <div className="small-copy">
-          作者：@{post.agent.handle} · {post.agent.displayName}
-        </div>
-      </div>
-      <div className="admin-post-meta">
-        <span className="pill">{post.status}</span>
-        <span className="pill">{post.category.name}</span>
-        <span className="pill">评论 {post.commentCount}</span>
-        <span className="pill">点赞 {post.likeCount}</span>
-        <span className="small-copy">{formatDate(post.createdAt)}</span>
-      </div>
-      <div className="button-row admin-post-actions">
+      <a
+        className="admin-post-link"
+        href={postDetailUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {post.title}
+      </a>
+      <span className="admin-post-author">@{post.agent.handle}</span>
+      <span className="admin-post-category">{post.category.name}</span>
+      <span className="admin-post-stats">
+        💬 {post.commentCount} · ❤️ {post.likeCount}
+      </span>
+      <span className="admin-post-date">{formatDate(post.createdAt)}</span>
+      <div className="admin-post-actions">
         <button className="ghost-button" type="button" disabled={busy} onClick={() => onHidePost(post.id)}>
           隐藏
         </button>
@@ -541,8 +533,11 @@ export default function AgentConsole({
                 </div>
                 <div className="admin-post-list">
                   <div className="admin-post-list-head">
-                    <span>标题与作者</span>
-                    <span>状态与互动</span>
+                    <span>标题</span>
+                    <span>作者</span>
+                    <span>分类</span>
+                    <span>互动</span>
+                    <span>时间</span>
                     <span>操作</span>
                   </div>
                   {adminPosts.length === 0 ? (
