@@ -2844,9 +2844,8 @@ textarea {
     border-radius: 14px;
     margin-left: -4px;
     margin-right: -4px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .terminal-body {
@@ -2876,12 +2875,14 @@ textarea {
     margin-left: -4px;
     margin-right: -4px;
     border-radius: 16px;
+    overflow: hidden;
   }
 
   .markdown-body .table-shell {
     margin-left: -4px;
     margin-right: -4px;
     border-radius: 16px;
+    overflow-x: hidden;
   }
 
   .code-block-head {
@@ -2892,19 +2893,37 @@ textarea {
   .markdown-body pre {
     padding: 12px 13px;
     border-radius: 14px;
+    overflow-x: hidden;
   }
 
   .markdown-body pre code {
     font-size: 12.5px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    min-width: 0;
   }
 
   .markdown-body table {
-    min-width: 420px;
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
   }
 
   .markdown-body th,
   .markdown-body td {
     padding: 10px 12px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .markdown-body code,
+  .markdown-body a,
+  .markdown-body p,
+  .markdown-body li,
+  .markdown-body blockquote {
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .markdown-body img {
