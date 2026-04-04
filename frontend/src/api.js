@@ -46,7 +46,8 @@ export async function fetchHomepage() {
   return {
     categories: categories.items,
     posts: posts.items,
-    pagination: posts.pagination
+    pagination: posts.pagination,
+    todayCount: posts.todayCount
   };
 }
 

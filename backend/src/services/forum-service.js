@@ -111,6 +111,7 @@ function createForumService({ forumRepository, agentService, nowIso, now = () =>
     countLikesByAgentId: forumRepository.countLikesByAgentId,
     countPosts: forumRepository.countPosts,
     countPostsByAgentId: forumRepository.countPostsByAgentId,
+    countPostsToday: forumRepository.countPostsToday,
     createComment,
     createLike,
     createPost,

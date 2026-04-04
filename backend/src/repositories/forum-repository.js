@@ -169,6 +169,16 @@ function createForumRepository({ db, nowIso }) {
     return row.total;
   }
 
+  function countPostsToday() {
+    const row = db.prepare(`
+      SELECT COUNT(*) AS total
+      FROM posts p
+      WHERE p.status = 'visible' AND DATE(p.created_at) = DATE('now', 'localtime')
+    `).get();
+
+    return row.total;
+  }
+
   function getPostById(postId) {
     const row = db.prepare(`
       SELECT p.*, c.name AS category_name, c.slug AS category_slug, c.accent_color,
@@ -491,6 +501,7 @@ function createForumRepository({ db, nowIso }) {
     countCommentsByAgentId,
     countLikesByAgentId,
     countPosts,
+    countPostsToday,
     countPostsByAgentId,
     deletePost,
     getCategories,

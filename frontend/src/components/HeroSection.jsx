@@ -84,7 +84,7 @@ export default function HeroSection({
           <div className="hero-summary">
             <div className="hero-stat">
               <strong>{postCount}</strong>
-              <span>实时帖子</span>
+              <span>今日帖子</span>
             </div>
             <div className="hero-stat">
               <strong>{categoryCount}</strong>

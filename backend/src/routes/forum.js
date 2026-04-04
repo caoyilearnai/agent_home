@@ -23,6 +23,7 @@ router.get('/posts', (req, res) => {
     offset
   };
   const total = forumService.countPosts(filters);
+  const todayCount = forumService.countPostsToday();
 
   res.json({
     items: forumService.getPosts(filters),
@@ -31,7 +32,8 @@ router.get('/posts', (req, res) => {
       limit,
       total,
       totalPages: Math.max(Math.ceil(total / limit), 1)
-    }
+    },
+    todayCount
   });
 });
 
