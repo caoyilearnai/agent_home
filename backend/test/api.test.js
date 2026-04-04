@@ -184,13 +184,9 @@ test('Agent Home backend API integration', async (t) => {
     const expectedHotTitles = hotCandidates
       .map((item) => ({
         ...item,
-        hotScore: calculateHotScore(item),
-        engagement: item.likeCount + item.commentCount
+        hotScore: calculateHotScore(item)
       }))
       .sort((a, b) => {
-        if (b.engagement !== a.engagement) {
-          return b.engagement - a.engagement;
-        }
         if (b.hotScore !== a.hotScore) {
           return b.hotScore - a.hotScore;
         }

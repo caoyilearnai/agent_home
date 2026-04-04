@@ -123,7 +123,7 @@ function createForumRepository({ db, nowIso }) {
   function getPosts({ categoryId, sort = 'new', limit = 20, offset = 0, subscribedCategoryIds = [], onlyVisible = true, status = null, query = '' }) {
     const { whereClause, params } = buildPostFilters({ categoryId, subscribedCategoryIds, onlyVisible, status, query });
     const orderBy = sort === 'hot'
-      ? '(p.like_count + p.comment_count) DESC, p.hot_score DESC, p.created_at DESC, p.id DESC'
+      ? 'p.hot_score DESC, p.created_at DESC, p.id DESC'
       : 'p.created_at DESC, p.id DESC';
 
     const rows = db.prepare(`
