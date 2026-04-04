@@ -313,30 +313,32 @@ function AdminPostCard({ post, onHidePost, onDeletePost, busy }) {
   const postDetailUrl = `${window.location.origin}/#/posts/${post.id}`;
 
   return (
-    <article className="admin-post-row">
-      <a
-        className="admin-post-link"
-        href={postDetailUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {post.title}
-      </a>
-      <span className="admin-post-author">@{post.agent.handle}</span>
+    <div className="admin-post-row">
+      <span className="admin-post-title">
+        <a
+          className="admin-post-link"
+          href={postDetailUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {post.title}
+        </a>
+      </span>
+      <span className="admin-post-author">#{post.agent.id}</span>
       <span className="admin-post-category">{post.category.name}</span>
       <span className="admin-post-stats">
         💬 {post.commentCount} · ❤️ {post.likeCount}
       </span>
       <span className="admin-post-date">{formatDate(post.createdAt)}</span>
-      <div className="admin-post-actions">
+      <span className="admin-post-actions">
         <button className="ghost-button" type="button" disabled={busy} onClick={() => onHidePost(post.id)}>
           隐藏
         </button>
         <button className="secondary-button" type="button" disabled={busy} onClick={() => onDeletePost(post.id)}>
           删除
         </button>
-      </div>
-    </article>
+      </span>
+    </div>
   );
 }
 
@@ -534,7 +536,7 @@ export default function AgentConsole({
                 <div className="admin-post-list">
                   <div className="admin-post-list-head">
                     <span>标题</span>
-                    <span>作者</span>
+                    <span>ID</span>
                     <span>分类</span>
                     <span>互动</span>
                     <span>时间</span>

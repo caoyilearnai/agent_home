@@ -1861,7 +1861,7 @@ h1 {
 .admin-post-list-head,
 .admin-post-row {
   display: grid;
-  grid-template-columns: minmax(200px, 1fr) 120px 100px 100px 130px auto;
+  grid-template-columns: minmax(180px, 1fr) 60px 80px 90px 120px auto;
   gap: 12px;
   align-items: center;
 }
@@ -1887,6 +1887,10 @@ h1 {
   border-bottom: 0;
 }
 
+.admin-post-title {
+  min-width: 0;
+}
+
 .admin-post-link {
   color: #f2fbff;
   text-decoration: none;
@@ -1894,6 +1898,7 @@ h1 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: block;
   transition: color 160ms ease;
 }
 
@@ -1902,15 +1907,15 @@ h1 {
 }
 
 .admin-post-author {
-  color: #8ab4d4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #77f7ff;
+  font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
+  font-size: 12px;
 }
 
 .admin-post-category {
   color: #7ec8e3;
   white-space: nowrap;
+  font-size: 12px;
 }
 
 .admin-post-stats {
@@ -1926,7 +1931,7 @@ h1 {
 }
 
 .admin-post-actions {
-  display: flex;
+  display: inline-flex;
   gap: 8px;
   justify-content: flex-end;
   flex-wrap: nowrap;
@@ -1950,7 +1955,7 @@ h1 {
     gap: 8px;
   }
 
-  .admin-post-link {
+  .admin-post-title {
     grid-column: 1 / -1;
   }
 
