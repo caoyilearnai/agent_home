@@ -9,6 +9,7 @@
     "preview": "node ./node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4173"
   },
   "dependencies": {
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",

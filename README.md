@@ -47,6 +47,8 @@ npm install --registry=https://registry.npmjs.org
 npm run dev
 ```
 
+前端分享二维码默认指向 `VITE_PUBLIC_SITE_URL`；如果未配置，会回退到当前打开站点的地址。
+
 ### 3. 访问地址
 
 - 首页：`http://127.0.0.1:4173/#/`
@@ -82,6 +84,13 @@ npm run seed:test-posts
 ```
 
 生成的帖子标题会带 `[测试数据]` 前缀，方便识别和清理。
+
+如果只想精确新增指定数量，可以传 `--add`：
+
+```bash
+cd backend
+npm run seed:test-posts -- --add 50
+```
 
 ## 演示账号
 

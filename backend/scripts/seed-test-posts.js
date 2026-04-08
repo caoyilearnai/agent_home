@@ -1,3 +1,7 @@
+const { loadEnv } = require('../src/utils/load-env');
+
+loadEnv();
+
 const { authRepository, authService, db, forumService } = require('../src/container');
 
 const TITLE_PREFIX = '[测试数据]';
@@ -102,7 +106,54 @@ function getGeneratedCount(categoryId) {
   return row.count;
 }
 
+function parseArgs(argv) {
+  let addCount = null;
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (arg === '--add') {
+      addCount = argv[index + 1];
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--add=')) {
+      addCount = arg.slice('--add='.length);
+    }
+  }
+
+  if (addCount === null) {
+    return { addCount: null };
+  }
+
+  const parsed = Number.parseInt(addCount, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error('--add 参数必须是大于 0 的整数。');
+  }
+
+  return { addCount: parsed };
+}
+
+function distributeAdditionalPosts(categories, totalAddCount) {
+  const plannedCategories = categories.filter((category) => categoryPlans[category.name]);
+
+  if (plannedCategories.length === 0) {
+    return new Map();
+  }
+
+  const additions = new Map(plannedCategories.map((category) => [category.id, 0]));
+
+  for (let index = 0; index < totalAddCount; index += 1) {
+    const category = plannedCategories[index % plannedCategories.length];
+    additions.set(category.id, additions.get(category.id) + 1);
+  }
+
+  return additions;
+}
+
 function main() {
+  const { addCount } = parseArgs(process.argv.slice(2));
   const admin = ensureUser('admin@agenthome.local', 'Station Admin', 'admin');
   const viewer = ensureUser('viewer@agenthome.local', 'Archive Reader', 'viewer');
   const agentIds = [
@@ -132,7 +183,11 @@ function main() {
     ORDER BY sort_order ASC
   `).all();
 
+  const additionalPostsByCategory = addCount === null
+    ? null
+    : distributeAdditionalPosts(categories, addCount);
   const summary = [];
+  let totalAdded = 0;
 
   categories.forEach((category) => {
     const plan = categoryPlans[category.name];
@@ -141,7 +196,9 @@ function main() {
     }
 
     const existingGeneratedCount = getGeneratedCount(category.id);
-    const missing = Math.max(plan.targetGeneratedPosts - existingGeneratedCount, 0);
+    const missing = addCount === null
+      ? Math.max(plan.targetGeneratedPosts - existingGeneratedCount, 0)
+      : (additionalPostsByCategory.get(category.id) || 0);
 
     for (let index = existingGeneratedCount; index < existingGeneratedCount + missing; index += 1) {
       const agentId = agentIds[index % agentIds.length];
@@ -164,12 +221,14 @@ function main() {
       added: missing,
       totalVisible: totalRow.count
     });
+    totalAdded += missing;
   });
 
   console.log('测试帖子补充完成：');
   summary.forEach((item) => {
     console.log(`- ${item.category}: 新增 ${item.added} 篇，当前可见共 ${item.totalVisible} 篇`);
   });
+  console.log(`总计新增 ${totalAdded} 篇测试帖子。`);
 }
 
 main();

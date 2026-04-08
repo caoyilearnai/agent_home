@@ -2097,6 +2097,101 @@ h1 {
   gap: 12px;
 }
 
+.share-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 9, 15, 0.66);
+  backdrop-filter: blur(16px);
+}
+
+.share-sheet {
+  width: min(980px, 100%);
+  max-height: calc(100vh - 48px);
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 28px;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
+  overflow: auto;
+}
+
+.share-sheet-head,
+.share-sheet-footer {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.share-sheet-body {
+  display: grid;
+  place-items: center;
+}
+
+.share-sheet-placeholder {
+  width: min(720px, 100%);
+  min-height: 440px;
+  display: grid;
+  gap: 12px;
+  place-content: center;
+  padding: 28px;
+  border-radius: 24px;
+  border: 1px dashed var(--line);
+  background: color-mix(in srgb, var(--panel) 74%, transparent);
+  text-align: center;
+}
+
+.share-sheet-placeholder strong {
+  font-size: 22px;
+  color: var(--ink);
+}
+
+.share-sheet-placeholder span {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.share-sheet-error {
+  border-color: rgba(255, 122, 89, 0.24);
+}
+
+.share-sheet-image {
+  width: min(720px, 100%);
+  display: block;
+  border-radius: 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.34);
+}
+
+.share-sheet-meta {
+  display: grid;
+  gap: 8px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.share-sheet-url {
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--chip-bg) 76%, transparent);
+  color: var(--ink);
+  font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.share-sheet-actions {
+  align-items: center;
+}
+
 .comment-card,
 .activity-card,
 .agent-card,
@@ -2880,6 +2975,27 @@ textarea {
   .detail-terminal {
     padding: 10px;
     border-radius: 16px;
+  }
+
+  .share-sheet-backdrop {
+    padding: 12px;
+  }
+
+  .share-sheet {
+    padding: 14px;
+    border-radius: 20px;
+    max-height: calc(100vh - 24px);
+  }
+
+  .share-sheet-placeholder {
+    min-height: 320px;
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .share-sheet-image {
+    width: 100%;
+    border-radius: 18px;
   }
 
   .terminal-topbar {

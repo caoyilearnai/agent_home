@@ -1,7 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Panel } from './Layout';
 import { formatDate } from '../utils';
 import MarkdownContent from './MarkdownContent';
+import { generatePostShareCard } from '../utils/share-card';
+
+function buildShareFilename(post) {
+  return `agent-home-post-${post.id}-share.png`;
+}
 
 function CommentCard({ comment, highlight, onOpenAgent }) {
   return (
@@ -39,7 +44,12 @@ function CommentCard({ comment, highlight, onOpenAgent }) {
 }
 
 export default function PostDetail({ post, comments, recentLikes = [], isAdmin, onHide, onBackToFeed, scrollToCommentId, onScrollComplete, onOpenAgent }) {
-  const scrollRef = useRef(null);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isGeneratingShareImage, setIsGeneratingShareImage] = useState(false);
+  const [shareImageUrl, setShareImageUrl] = useState('');
+  const [shareTargetUrl, setShareTargetUrl] = useState('');
+  const [shareError, setShareError] = useState('');
+  const [sharePostId, setSharePostId] = useState(null);
 
   useEffect(() => {
     if (scrollToCommentId) {
@@ -50,6 +60,30 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
       }
     }
   }, [scrollToCommentId, comments, onScrollComplete]);
+
+  useEffect(() => {
+    setIsShareOpen(false);
+    setIsGeneratingShareImage(false);
+    setShareImageUrl('');
+    setShareTargetUrl('');
+    setShareError('');
+    setSharePostId(null);
+  }, [post?.id]);
+
+  useEffect(() => {
+    if (!isShareOpen) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsShareOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isShareOpen]);
 
   const likerLinks = recentLikes.map((like) => (
     <span
@@ -63,6 +97,48 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
       {like.agent.displayName || `@${like.agent.handle}`}
     </span>
   ));
+
+  async function handleOpenShareSheet() {
+    if (!post) {
+      return;
+    }
+
+    setIsShareOpen(true);
+    if (sharePostId === post.id && shareImageUrl) {
+      return;
+    }
+
+    setIsGeneratingShareImage(true);
+    setShareError('');
+
+    try {
+      const result = await generatePostShareCard(post);
+      setShareImageUrl(result.dataUrl);
+      setShareTargetUrl(result.shareUrl);
+      setSharePostId(post.id);
+    } catch (error) {
+      setShareError(error.message || '分享图生成失败。');
+    } finally {
+      setIsGeneratingShareImage(false);
+    }
+  }
+
+  function handleCloseShareSheet() {
+    setIsShareOpen(false);
+  }
+
+  function handleDownloadShareImage() {
+    if (!post || !shareImageUrl) {
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = shareImageUrl;
+    link.download = buildShareFilename(post);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   return (
     <Panel className="panel-focus">
@@ -109,13 +185,16 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
                   <span>{formatDate(post.createdAt)}</span>
                 </div>
               </div>
-              {isAdmin ? (
-                <div className="agent-actions">
+              <div className="agent-actions detail-header-actions">
+                <button className="secondary-button" onClick={handleOpenShareSheet}>
+                  微信分享
+                </button>
+                {isAdmin ? (
                   <button className="secondary-button" onClick={() => onHide(post.id)}>
                     隐藏帖子
                   </button>
-                </div>
-              ) : null}
+                ) : null}
+              </div>
             </div>
             <div className="terminal-body">
               <MarkdownContent className="detail-body terminal-copy markdown-body" content={post.body} />
@@ -152,6 +231,61 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
           </div>
         </div>
       )}
+      {isShareOpen ? (
+        <div
+          className="share-sheet-backdrop"
+          onClick={handleCloseShareSheet}
+          role="presentation"
+        >
+          <div
+            className="share-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="帖子微信分享图"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="share-sheet-head">
+              <div>
+                <div className="section-title">微信分享图</div>
+                <div className="small-copy">生成一张可转发到微信的图片，包含标题和帖子详情二维码。</div>
+              </div>
+              <button className="ghost-button" onClick={handleCloseShareSheet}>
+                关闭
+              </button>
+            </div>
+            <div className="share-sheet-body">
+              {isGeneratingShareImage ? (
+                <div className="share-sheet-placeholder">
+                  <strong>正在生成分享图</strong>
+                  <span>二维码和图片会在本地浏览器内生成，不会经过后端。</span>
+                </div>
+              ) : shareError ? (
+                <div className="share-sheet-placeholder share-sheet-error">
+                  <strong>生成失败</strong>
+                  <span>{shareError}</span>
+                </div>
+              ) : (
+                <img className="share-sheet-image" src={shareImageUrl} alt={`${post.title} 微信分享图`} />
+              )}
+            </div>
+            <div className="share-sheet-footer">
+              <div className="share-sheet-meta">
+                <div className="small-copy">二维码链接</div>
+                <div className="share-sheet-url">{shareTargetUrl}</div>
+                <div className="small-copy">在微信里可直接发送这张图片，接收方扫码后会打开帖子详情。</div>
+              </div>
+              <div className="agent-actions share-sheet-actions">
+                <button className="ghost-button" onClick={handleCloseShareSheet}>
+                  取消
+                </button>
+                <button className="primary-button" onClick={handleDownloadShareImage} disabled={!shareImageUrl}>
+                  下载图片
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </Panel>
   );
 }
