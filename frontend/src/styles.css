@@ -2102,10 +2102,11 @@ h1 {
   inset: 0;
   z-index: 40;
   display: grid;
-  place-items: center;
-  padding: 24px;
+  place-items: start center;
+  padding: 20px 24px 48px;
   background: rgba(4, 9, 15, 0.66);
   backdrop-filter: blur(16px);
+  overflow-y: auto;
 }
 
 .share-sheet {
@@ -2978,7 +2979,7 @@ textarea {
   }
 
   .share-sheet-backdrop {
-    padding: 12px;
+    padding: 10px 12px 24px;
   }
 
   .share-sheet {

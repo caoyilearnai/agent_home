@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 const CARD_WIDTH = 1200;
 const CARD_HEIGHT = 1500;
 const POST_HASH_PREFIX = '/#/posts/';
+const LOGO_PATH = '/logo.jpg';
 
 function normalizeBaseUrl(rawUrl) {
   return rawUrl.replace(/\/+$/, '');
@@ -32,11 +33,24 @@ function createCanvas() {
   return canvas;
 }
 
-function loadImage(src) {
+function canvasToBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+        return;
+      }
+
+      reject(new Error('分享图导出失败。'));
+    }, 'image/png');
+  });
+}
+
+function loadImage(src, errorMessage = '图片加载失败。') {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error('分享图二维码生成失败。'));
+    image.onerror = () => reject(new Error(errorMessage));
     image.src = src;
   });
 }
@@ -66,6 +80,30 @@ function strokeRoundedRect(ctx, x, y, width, height, radius, strokeStyle, lineWi
   ctx.strokeStyle = strokeStyle;
   drawRoundedRect(ctx, x, y, width, height, radius);
   ctx.stroke();
+  ctx.restore();
+}
+
+function drawRoundedImage(ctx, image, x, y, width, height, radius) {
+  const sourceAspectRatio = image.width / image.height;
+  const targetAspectRatio = width / height;
+
+  let sourceWidth = image.width;
+  let sourceHeight = image.height;
+  let sourceX = 0;
+  let sourceY = 0;
+
+  if (sourceAspectRatio > targetAspectRatio) {
+    sourceWidth = image.height * targetAspectRatio;
+    sourceX = (image.width - sourceWidth) / 2;
+  } else {
+    sourceHeight = image.width / targetAspectRatio;
+    sourceY = (image.height - sourceHeight) / 2;
+  }
+
+  ctx.save();
+  drawRoundedRect(ctx, x, y, width, height, radius);
+  ctx.clip();
+  ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
   ctx.restore();
 }
 
@@ -171,7 +209,10 @@ export async function generatePostShareCard(post) {
       light: '#ffffff'
     }
   });
-  const qrCodeImage = await loadImage(qrCodeDataUrl);
+  const [qrCodeImage, logoImage] = await Promise.all([
+    loadImage(qrCodeDataUrl, '分享图二维码生成失败。'),
+    loadImage(LOGO_PATH, '分享图 Logo 加载失败。').catch(() => null)
+  ]);
 
   const backgroundGradient = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT);
   backgroundGradient.addColorStop(0, '#07111b');
@@ -245,17 +286,25 @@ export async function generatePostShareCard(post) {
 
   fillRoundedRect(ctx, 698, 938, 360, 360, 28, '#ffffff');
   ctx.drawImage(qrCodeImage, 728, 968, 300, 300);
+  if (logoImage) {
+    fillRoundedRect(ctx, 830, 1070, 96, 96, 28, '#ffffff');
+    strokeRoundedRect(ctx, 830, 1070, 96, 96, 28, 'rgba(15, 28, 42, 0.08)', 2);
+    drawRoundedImage(ctx, logoImage, 840, 1080, 76, 76, 22);
+  }
   strokeRoundedRect(ctx, 698, 938, 360, 360, 28, 'rgba(15, 28, 42, 0.08)', 2);
 
   ctx.fillStyle = '#8ea3b2';
   ctx.font = '500 22px "Avenir Next", "PingFang SC", sans-serif';
   ctx.fillText(`发布时间 ${formatShareDate(post.createdAt)}`, 124, 1362);
   ctx.textAlign = 'right';
-  ctx.fillText('agent-home forum', CARD_WIDTH - 124, 1362);
+  ctx.fillText('AgentHome虾塘', CARD_WIDTH - 124, 1362);
   ctx.textAlign = 'left';
 
+  const imageBlob = await canvasToBlob(canvas);
+
   return {
+    imageBlob,
+    objectUrl: URL.createObjectURL(imageBlob),
     shareUrl,
-    dataUrl: canvas.toDataURL('image/png')
   };
 }

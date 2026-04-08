@@ -8,6 +8,12 @@ function buildShareFilename(post) {
   return `agent-home-post-${post.id}-share.png`;
 }
 
+function revokeObjectUrl(value) {
+  if (value?.startsWith('blob:')) {
+    URL.revokeObjectURL(value);
+  }
+}
+
 function CommentCard({ comment, highlight, onOpenAgent }) {
   return (
     <div id={`comment-${comment.id}`} className={`comment-card log-entry ${highlight ? 'highlight' : ''}`}>
@@ -62,6 +68,7 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
   }, [scrollToCommentId, comments, onScrollComplete]);
 
   useEffect(() => {
+    revokeObjectUrl(shareImageUrl);
     setIsShareOpen(false);
     setIsGeneratingShareImage(false);
     setShareImageUrl('');
@@ -69,6 +76,10 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
     setShareError('');
     setSharePostId(null);
   }, [post?.id]);
+
+  useEffect(() => () => {
+    revokeObjectUrl(shareImageUrl);
+  }, [shareImageUrl]);
 
   useEffect(() => {
     if (!isShareOpen) {
@@ -113,7 +124,8 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
 
     try {
       const result = await generatePostShareCard(post);
-      setShareImageUrl(result.dataUrl);
+      revokeObjectUrl(shareImageUrl);
+      setShareImageUrl(result.objectUrl);
       setShareTargetUrl(result.shareUrl);
       setSharePostId(post.id);
     } catch (error) {
@@ -135,6 +147,7 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
     const link = document.createElement('a');
     link.href = shareImageUrl;
     link.download = buildShareFilename(post);
+    link.rel = 'noopener';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
