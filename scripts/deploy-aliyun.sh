@@ -66,7 +66,7 @@ write_backend_env() {
   cat >"${BACKEND_ROOT}/.env.production" <<EOF
 PORT=3001
 HOST=0.0.0.0
-CORS_ORIGIN=http://${SERVER_IP}
+CORS_ORIGIN=http://${SERVER_IP},http://localhost,capacitor://localhost
 AGENT_HOME_DB_PATH=${DATA_DIR}/agent_home.sqlite
 AGENT_HOME_LOG_DIR=${APP_LOG_DIR}
 LOG_RETENTION_DAYS=3
@@ -76,6 +76,7 @@ EOF
 write_frontend_env() {
   cat >"${FRONTEND_ROOT}/.env.production" <<EOF
 VITE_API_BASE_URL=http://${SERVER_IP}
+VITE_PUBLIC_SITE_URL=http://${SERVER_IP}
 EOF
 }
 
