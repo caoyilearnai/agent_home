@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import { getPublicOrigin } from './app-shell';
 
 const CARD_WIDTH = 1200;
 const CARD_HEIGHT = 1500;
@@ -19,7 +20,7 @@ function getRuntimeOrigin() {
 
 export function getPublicSiteUrl() {
   const configured = import.meta.env.VITE_PUBLIC_SITE_URL?.trim();
-  return normalizeBaseUrl(configured || getRuntimeOrigin());
+  return getPublicOrigin(configured || getRuntimeOrigin());
 }
 
 export function buildPostShareUrl(postId) {

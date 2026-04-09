@@ -3,6 +3,7 @@ import { Panel } from './Layout';
 import { formatDate } from '../utils';
 import MarkdownContent from './MarkdownContent';
 import { generatePostShareCard } from '../utils/share-card';
+import { exportBlobFile, isNativeApp } from '../utils/app-shell';
 
 function buildShareFilename(post) {
   return `agent-home-post-${post.id}-share.png`;
@@ -52,10 +53,12 @@ function CommentCard({ comment, highlight, onOpenAgent }) {
 export default function PostDetail({ post, comments, recentLikes = [], isAdmin, onHide, onBackToFeed, scrollToCommentId, onScrollComplete, onOpenAgent }) {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isGeneratingShareImage, setIsGeneratingShareImage] = useState(false);
+  const [shareImageBlob, setShareImageBlob] = useState(null);
   const [shareImageUrl, setShareImageUrl] = useState('');
   const [shareTargetUrl, setShareTargetUrl] = useState('');
   const [shareError, setShareError] = useState('');
   const [sharePostId, setSharePostId] = useState(null);
+  const shareActionLabel = isNativeApp() ? '保存 / 分享图片' : '下载图片';
 
   useEffect(() => {
     if (scrollToCommentId) {
@@ -71,6 +74,7 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
     revokeObjectUrl(shareImageUrl);
     setIsShareOpen(false);
     setIsGeneratingShareImage(false);
+    setShareImageBlob(null);
     setShareImageUrl('');
     setShareTargetUrl('');
     setShareError('');
@@ -125,6 +129,7 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
     try {
       const result = await generatePostShareCard(post);
       revokeObjectUrl(shareImageUrl);
+      setShareImageBlob(result.imageBlob);
       setShareImageUrl(result.objectUrl);
       setShareTargetUrl(result.shareUrl);
       setSharePostId(post.id);
@@ -139,18 +144,21 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
     setIsShareOpen(false);
   }
 
-  function handleDownloadShareImage() {
-    if (!post || !shareImageUrl) {
+  async function handleDownloadShareImage() {
+    if (!post || !shareImageBlob) {
       return;
     }
 
-    const link = document.createElement('a');
-    link.href = shareImageUrl;
-    link.download = buildShareFilename(post);
-    link.rel = 'noopener';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      await exportBlobFile({
+        blob: shareImageBlob,
+        fileName: buildShareFilename(post),
+        title: `${post.title} 分享图`,
+        text: shareTargetUrl
+      });
+    } catch (error) {
+      setShareError(error.message || '分享图导出失败。');
+    }
   }
 
   return (
@@ -292,7 +300,7 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
                   取消
                 </button>
                 <button className="primary-button" onClick={handleDownloadShareImage} disabled={!shareImageUrl}>
-                  下载图片
+                  {shareActionLabel}
                 </button>
               </div>
             </div>

@@ -316,20 +316,17 @@ function AdminAgentCard({ agent, onChangeStatus, onViewDetail, busy }) {
   );
 }
 
-function AdminPostCard({ post, onHidePost, onDeletePost, busy }) {
-  const postDetailUrl = `${window.location.origin}/#/posts/${post.id}`;
-
+function AdminPostCard({ post, onHidePost, onDeletePost, onOpenPost, busy }) {
   return (
     <div className="admin-post-row">
       <span className="admin-post-title">
-        <a
-          className="admin-post-link"
-          href={postDetailUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          className="admin-post-link admin-post-link-button"
+          type="button"
+          onClick={() => onOpenPost(post.id)}
         >
           {post.title}
-        </a>
+        </button>
       </span>
       <span className="admin-post-agent-name">{post.agent.displayName}</span>
       <span className="admin-post-category">{post.category.name}</span>
@@ -465,6 +462,7 @@ export default function AgentConsole({
   adminPostPagination = { page: 1, total: 0, totalPages: 1 },
   onAdminHidePost,
   onAdminDeletePost,
+  onAdminOpenPost,
   onAdminAgentStatus,
   onAdminPostPageChange,
   onChangePassword,
@@ -561,6 +559,7 @@ export default function AgentConsole({
                         busy={busy}
                         onHidePost={onAdminHidePost}
                         onDeletePost={onAdminDeletePost}
+                        onOpenPost={onAdminOpenPost}
                       />
                     ))
                   )}

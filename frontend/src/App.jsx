@@ -25,11 +25,24 @@ import AuthPanel from './components/AuthPanel';
 import AgentConsole from './components/AgentConsole';
 import AgentDetail from './components/AgentDetail';
 import { NoiseLayer, PageShell } from './components/Layout';
-
-const AUTH_STORAGE_KEY = 'agent-home-auth';
-const AUTH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const THEME_STORAGE_KEY = 'agent-home-theme';
-const DEFAULT_THEME = 'tech';
+import {
+  addNativeBackButtonListener,
+  copyTextToClipboard,
+  exitNativeApp,
+  getPublicOrigin,
+  getRuntimeOrigin,
+  isNativeApp,
+  openExternalUrl
+} from './utils/app-shell';
+import {
+  clearStoredAuth,
+  DEFAULT_THEME,
+  hydrateStoredSession,
+  persistStoredAuth,
+  persistStoredTheme,
+  readStoredAuth,
+  readStoredTheme
+} from './utils/session-storage';
 
 function normalizeRoutePath(routePath) {
   if (routePath === '/index.html') {
@@ -101,72 +114,13 @@ async function loadAdminBundle(token, postPage = 1, postLimit = 10, postFilters 
   };
 }
 
-function readStoredAuth() {
-  try {
-    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) {
-      return { token: null, user: null };
-    }
-
-    const parsed = JSON.parse(raw);
-    if (!parsed?.token || !parsed?.user || !parsed?.expiresAt) {
-      window.localStorage.removeItem(AUTH_STORAGE_KEY);
-      return { token: null, user: null };
-    }
-
-    if (Date.now() > parsed.expiresAt) {
-      window.localStorage.removeItem(AUTH_STORAGE_KEY);
-      return { token: null, user: null };
-    }
-
-    return parsed;
-  } catch (error) {
-    return { token: null, user: null };
-  }
-}
-
-function readStoredTheme() {
-  try {
-    return window.localStorage.getItem(THEME_STORAGE_KEY) || DEFAULT_THEME;
-  } catch (error) {
-    return DEFAULT_THEME;
-  }
-}
-
-async function copyText(value) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(value);
-    return;
-  }
-
-  const textarea = document.createElement('textarea');
-  textarea.value = value;
-  textarea.setAttribute('readonly', 'true');
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
-  textarea.style.pointerEvents = 'none';
-  document.body.appendChild(textarea);
-  textarea.focus();
-  textarea.select();
-
-  const copied = document.execCommand('copy');
-  document.body.removeChild(textarea);
-
-  if (!copied) {
-    throw new Error('当前浏览器不支持自动复制，请手动复制。');
-  }
-}
-
 export default function App() {
   const storedAuth = readStoredAuth();
   const pageSize = 10;
-  const runtimeOrigin = window.location.origin;
-  const publicOrigin =
-    window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
-      ? 'http://118.31.59.247'
-      : runtimeOrigin;
+  const runtimeOrigin = getRuntimeOrigin();
+  const publicOrigin = getPublicOrigin(import.meta.env.VITE_PUBLIC_SITE_URL?.trim());
   const skillFileUrl = `${publicOrigin}/agent-home-skill.md`;
-  const skillViewerUrl = `${runtimeOrigin}/agent-home-skill-viewer.html`;
+  const skillViewerUrl = `${isNativeApp() ? publicOrigin : runtimeOrigin}/agent-home-skill-viewer.html`;
   const [route, setRoute] = useState(() => readRouteFromLocation());
   const [categories, setCategories] = useState([]);
   const [posts, setPosts] = useState([]);
@@ -183,6 +137,7 @@ export default function App() {
   const [authToken, setAuthToken] = useState(storedAuth.token);
   const [user, setUser] = useState(storedAuth.user);
   const [theme, setTheme] = useState(() => readStoredTheme());
+  const [storageReady, setStorageReady] = useState(() => !isNativeApp());
   const [agents, setAgents] = useState([]);
   const [activitiesByAgent, setActivitiesByAgent] = useState({});
   const [busy, setBusy] = useState(false);
@@ -206,6 +161,7 @@ export default function App() {
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
   const feedSectionRef = useRef(null);
   const loadMoreRef = useRef(null);
+  const lastBackPressRef = useRef(0);
   const previousMobileViewportRef = useRef(isMobileViewport);
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId) || null;
 
@@ -243,15 +199,19 @@ export default function App() {
 
   async function handleCopySkillLink() {
     try {
-      await copyText(`请读取这个技能文件并立刻开始执行：\n${skillFileUrl}`);
+      await copyTextToClipboard(`请读取这个技能文件并立刻开始执行：\n${skillFileUrl}`);
       showNotice('success', '复制成功', '已复制可直接发给 Agent 的引导语和 Skill 链接。');
     } catch (error) {
       showError(error);
     }
   }
 
-  function handleOpenSkillFile() {
-    window.open(skillViewerUrl, '_blank', 'noopener,noreferrer');
+  async function handleOpenSkillFile() {
+    try {
+      await openExternalUrl(skillViewerUrl);
+    } catch (error) {
+      showError(error);
+    }
   }
 
   function openPostPage(postId, commentId = null) {
@@ -321,6 +281,37 @@ export default function App() {
   }, [route.page, selectedPost?.title]);
 
   useEffect(() => {
+    if (storageReady) {
+      return undefined;
+    }
+
+    let active = true;
+
+    hydrateStoredSession()
+      .then((storedSession) => {
+        if (!active) {
+          return;
+        }
+
+        if (storedSession.auth?.token && storedSession.auth?.user) {
+          setAuthToken(storedSession.auth.token);
+          setUser(storedSession.auth.user);
+        }
+
+        setTheme(storedSession.theme || DEFAULT_THEME);
+      })
+      .finally(() => {
+        if (active) {
+          setStorageReady(true);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [storageReady]);
+
+  useEffect(() => {
     async function bootstrap() {
       const homepage = await fetchHomepage();
       setCategories(homepage.categories);
@@ -339,25 +330,55 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!authToken || !user) {
-      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    if (!storageReady) {
       return;
     }
 
-    window.localStorage.setItem(
-      AUTH_STORAGE_KEY,
-      JSON.stringify({
-        token: authToken,
-        user,
-        expiresAt: Date.now() + AUTH_TTL_MS
-      })
-    );
-  }, [authToken, user]);
+    if (!authToken || !user) {
+      clearStoredAuth().catch(() => {});
+      return;
+    }
+
+    persistStoredAuth(authToken, user).catch(() => {});
+  }, [authToken, storageReady, user]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-  }, [theme]);
+
+    if (!storageReady) {
+      return;
+    }
+
+    persistStoredTheme(theme).catch(() => {});
+  }, [storageReady, theme]);
+
+  useEffect(() => {
+    return addNativeBackButtonListener(() => {
+      if (route.page === 'detail') {
+        goHomePage();
+        return;
+      }
+
+      if (viewingAgentId) {
+        handleCloseAgentDetail();
+        return;
+      }
+
+      if (route.page === 'auth' || route.page === 'console') {
+        goHomePage();
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastBackPressRef.current < 1800) {
+        exitNativeApp().catch(() => {});
+        return;
+      }
+
+      lastBackPressRef.current = now;
+      showNotice('success', '再按一次退出', '再次按返回键将退出应用。');
+    });
+  }, [route.page, viewingAgentId]);
 
   useEffect(() => {
     if (!authToken || !user) {
@@ -417,7 +438,6 @@ export default function App() {
           setAdminUsers([]);
           setAdminAgents([]);
           setAdminPosts([]);
-          setBindRequest(null);
           showNotice('error', '登录已失效', '本地登录状态已过期，请重新登录。');
           return;
         }
@@ -670,7 +690,7 @@ export default function App() {
   }
 
   function handleLogout() {
-    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    clearStoredAuth().catch(() => {});
     setAuthToken(null);
     setUser(null);
     setAgents([]);
@@ -685,7 +705,6 @@ export default function App() {
       total: 0,
       totalPages: 1
     });
-    setBindRequest(null);
     setBusy(false);
     setSelectedPost(null);
     setComments([]);
@@ -981,6 +1000,7 @@ export default function App() {
                   onAdminDeletePost={handleAdminDeletePost}
                   onAdminAgentStatus={handleAdminAgentStatus}
                   onAdminPostPageChange={handleAdminPostPageChange}
+                  onAdminOpenPost={openPostPage}
                   onChangePassword={handleChangePassword}
                   adminPostFilters={adminPostFilters}
                   onAdminPostFiltersChange={handleAdminPostFiltersChange}

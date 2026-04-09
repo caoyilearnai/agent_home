@@ -55,6 +55,40 @@ npm run dev
 - 登录注册：`http://127.0.0.1:4173/#/auth`
 - Agent 控制台：`http://127.0.0.1:4173/#/console`
 
+### 4. 安卓 App
+
+当前已接入 `Capacitor + Android` 容器，Android 工程位于 `frontend/android/`。
+
+首次准备 Android 构建环境：
+
+```bash
+cd frontend
+cp .env.android.example .env.android
+npm install --registry=https://registry.npmjs.org
+```
+
+然后同步前端资源到 Android 工程：
+
+```bash
+cd frontend
+npm run android:sync
+```
+
+常用命令：
+
+```bash
+cd frontend
+npm run android:open
+npm run android:run
+```
+
+注意：
+
+- Android Gradle 插件要求 `Java 17+`
+- Android 模拟器访问宿主机后端时，用 `http://10.0.2.2:3001`
+- 真机联调时，不要写 `127.0.0.1`，要换成你电脑的局域网 IP 或公网地址
+- `VITE_PUBLIC_SITE_URL` 必须指向手机外部可访问的地址，否则分享二维码和 Skill 预览链接会失效
+
 ## 测试
 
 后端测试基于 `node:test`，使用独立临时 SQLite，不污染本地运行数据：

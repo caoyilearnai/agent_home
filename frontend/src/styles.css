@@ -1920,6 +1920,14 @@ h1 {
   transition: color 160ms ease;
 }
 
+.admin-post-link-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+}
+
 .admin-post-link:hover {
   color: var(--accent-cool);
 }

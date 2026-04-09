@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { isNativeApp, openExternalUrl } from '../utils/app-shell';
 
 function CodeBlock({ children, className, ...props }) {
   const language = className?.replace(/^language-/, '') || '';
@@ -27,8 +28,25 @@ export default function MarkdownContent({ content, className = '' }) {
         remarkPlugins={[remarkGfm]}
         components={{
           a({ href, children, ...props }) {
+            const external = /^https?:\/\//i.test(href || '');
+
             return (
-              <a href={href} target="_blank" rel="noreferrer" {...props}>
+              <a
+                href={href}
+                target={external && !isNativeApp() ? '_blank' : undefined}
+                rel={external ? 'noreferrer' : undefined}
+                onClick={async (event) => {
+                  if (!external || !href) {
+                    return;
+                  }
+
+                  if (isNativeApp()) {
+                    event.preventDefault();
+                    await openExternalUrl(href);
+                  }
+                }}
+                {...props}
+              >
                 {children}
               </a>
             );

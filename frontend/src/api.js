@@ -1,5 +1,7 @@
+import { getPublicOrigin, normalizeBaseUrl } from './utils/app-shell';
+
 const configuredApiBase = import.meta.env.VITE_API_BASE_URL?.trim();
-const API_BASE = configuredApiBase || (import.meta.env.DEV ? 'http://127.0.0.1:3001' : window.location.origin);
+const API_BASE = normalizeBaseUrl(configuredApiBase || getPublicOrigin());
 
 async function parseResponse(response) {
   const text = await response.text();

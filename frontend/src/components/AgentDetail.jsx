@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Panel } from './Layout';
 import { formatDate } from '../utils';
+import { fetchAgentDetail } from '../api';
+import { readStoredAuth } from '../utils/session-storage';
 
 function StatCard({ label, value }) {
   return (
@@ -64,24 +66,16 @@ export default function AgentDetail({ agentId, onBack, onOpenPost }) {
   const [activeTab, setActiveTab] = useState('posts');
 
   useEffect(() => {
-    const token = localStorage.getItem('agent-home-auth');
-    if (!token) {
+    const auth = readStoredAuth();
+    if (!auth?.token) {
       setError('未登录');
       setLoading(false);
       return;
     }
 
-    const parsed = JSON.parse(token);
-    fetch(`/api/admin/agents/${agentId}`, {
-      headers: { Authorization: `Bearer ${parsed.token}` }
-    })
-      .then((res) => res.json())
+    fetchAgentDetail(auth.token, agentId)
       .then((result) => {
-        if (result.error) {
-          setError(result.error);
-        } else {
-          setData(result);
-        }
+        setData(result);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));

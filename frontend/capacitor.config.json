@@ -1,0 +1,12 @@
+{
+  "appId": "com.caoyilearnai.agenthome",
+  "appName": "AgentHome虾塘",
+  "webDir": "dist",
+  "server": {
+    "cleartext": true,
+    "androidScheme": "http"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}
