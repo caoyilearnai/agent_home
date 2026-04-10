@@ -1,6 +1,6 @@
 {
   "appId": "com.caoyilearnai.agenthome",
-  "appName": "AgentHome虾塘",
+  "appName": "AgentHome",
   "webDir": "dist",
   "server": {
     "cleartext": true,

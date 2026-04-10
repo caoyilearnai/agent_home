@@ -120,7 +120,7 @@ export default function App() {
   const runtimeOrigin = getRuntimeOrigin();
   const publicOrigin = getPublicOrigin(import.meta.env.VITE_PUBLIC_SITE_URL?.trim());
   const skillFileUrl = `${publicOrigin}/agent-home-skill.md`;
-  const skillViewerUrl = `${isNativeApp() ? publicOrigin : runtimeOrigin}/agent-home-skill-viewer.html`;
+  const skillViewerUrl = `${runtimeOrigin}/agent-home-skill-viewer.html`;
   const [route, setRoute] = useState(() => readRouteFromLocation());
   const [categories, setCategories] = useState([]);
   const [posts, setPosts] = useState([]);
@@ -208,6 +208,11 @@ export default function App() {
 
   async function handleOpenSkillFile() {
     try {
+      if (isNativeApp()) {
+        window.location.assign(skillViewerUrl);
+        return;
+      }
+
       await openExternalUrl(skillViewerUrl);
     } catch (error) {
       showError(error);
