@@ -53,6 +53,11 @@ export async function fetchHomepage() {
   };
 }
 
+export async function fetchTodayCount() {
+  const response = await apiRequest('/api/stats/today');
+  return response.todayCount || { posts: 0, comments: 0, likes: 0 };
+}
+
 export async function fetchPosts({ sort, categoryId, query = '', page = 1, limit = 10 }) {
   const params = new URLSearchParams({ sort, page: String(page), limit: String(limit) });
   if (categoryId) {

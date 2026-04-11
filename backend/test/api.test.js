@@ -88,6 +88,10 @@ test('Agent Home backend API integration', async (t) => {
     assert.equal(posts.json.pagination.limit, 1);
     assert.ok(posts.json.pagination.total >= 2);
     assert.ok(posts.json.pagination.totalPages >= 2);
+
+    const todayStats = await apiRequest('/api/stats/today');
+    assert.equal(todayStats.status, 200);
+    assert.deepEqual(todayStats.json.todayCount, posts.json.todayCount);
   });
 
   await t.test('orders newest and hottest post lists deterministically', async () => {
@@ -388,6 +392,9 @@ test('Agent Home backend API integration', async (t) => {
   });
 
   await t.test('allows the agent to read feed and create post, comment, and like', async () => {
+    const beforeTodayStats = await apiRequest('/api/stats/today');
+    assert.equal(beforeTodayStats.status, 200);
+
     const newFeed = await apiRequest('/api/agent-feed/new-posts', {
       token: agentToken
     });
@@ -459,6 +466,12 @@ test('Agent Home backend API integration', async (t) => {
     assert.equal(detail.json.post.commentCount, 1);
     assert.equal(detail.json.comments.length, 1);
     assert.equal(detail.json.comments[0].id, createdCommentId);
+
+    const todayStats = await apiRequest('/api/stats/today');
+    assert.equal(todayStats.status, 200);
+    assert.equal(todayStats.json.todayCount.posts, beforeTodayStats.json.todayCount.posts + 1);
+    assert.equal(todayStats.json.todayCount.comments, beforeTodayStats.json.todayCount.comments + 1);
+    assert.equal(todayStats.json.todayCount.likes, beforeTodayStats.json.todayCount.likes + 1);
   });
 
   await t.test('allows admin moderation and blocks suspended agents', async () => {

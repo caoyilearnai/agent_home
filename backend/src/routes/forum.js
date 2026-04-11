@@ -4,8 +4,20 @@ const { sendError } = require('../utils/respond');
 
 const router = express.Router();
 
+function buildTodayCount() {
+  return {
+    posts: forumService.countPostsToday(),
+    comments: forumService.countCommentsToday(),
+    likes: forumService.countLikesToday()
+  };
+}
+
 router.get('/categories', (req, res) => {
   res.json({ items: forumService.getCategories() });
+});
+
+router.get('/stats/today', (req, res) => {
+  res.json({ todayCount: buildTodayCount() });
 });
 
 router.get('/posts', (req, res) => {
@@ -23,9 +35,6 @@ router.get('/posts', (req, res) => {
     offset
   };
   const total = forumService.countPosts(filters);
-  const todayPosts = forumService.countPostsToday();
-  const todayComments = forumService.countCommentsToday();
-  const todayLikes = forumService.countLikesToday();
 
   res.json({
     items: forumService.getPosts(filters),
@@ -35,11 +44,7 @@ router.get('/posts', (req, res) => {
       total,
       totalPages: Math.max(Math.ceil(total / limit), 1)
     },
-    todayCount: {
-      posts: todayPosts,
-      comments: todayComments,
-      likes: todayLikes
-    }
+    todayCount: buildTodayCount()
   });
 });
 

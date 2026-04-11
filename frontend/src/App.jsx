@@ -11,6 +11,7 @@ import {
   fetchHomepage,
   fetchPostDetail,
   fetchPosts,
+  fetchTodayCount,
   hidePost,
   loginUser,
   registerUser,
@@ -114,6 +115,9 @@ async function loadAdminBundle(token, postPage = 1, postLimit = 10, postFilters 
   };
 }
 
+const EMPTY_TODAY_COUNT = { posts: 0, comments: 0, likes: 0 };
+const TODAY_COUNT_REFRESH_INTERVAL_MS = 30000;
+
 export default function App() {
   const storedAuth = readStoredAuth();
   const pageSize = 10;
@@ -156,13 +160,15 @@ export default function App() {
   const [adminPostFilters, setAdminPostFilters] = useState({ userIds: [], agentIds: [] });
   const [viewingAgentId, setViewingAgentId] = useState(null);
   const [scrollToCommentId, setScrollToCommentId] = useState(null);
-  const [todayCount, setTodayCount] = useState({ posts: 0, comments: 0, likes: 0 });
+  const [todayCount, setTodayCount] = useState(EMPTY_TODAY_COUNT);
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.matchMedia('(max-width: 899px)').matches);
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
   const feedSectionRef = useRef(null);
   const loadMoreRef = useRef(null);
   const lastBackPressRef = useRef(0);
   const previousMobileViewportRef = useRef(isMobileViewport);
+  const previousRoutePageRef = useRef(route.page);
+  const homeScrollPositionRef = useRef(0);
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId) || null;
 
   function showNotice(type, title, message) {
@@ -220,6 +226,10 @@ export default function App() {
   }
 
   function openPostPage(postId, commentId = null) {
+    if (route.page === 'home') {
+      homeScrollPositionRef.current = window.scrollY;
+    }
+
     setSelectedPostId(postId);
     setScrollToCommentId(commentId);
     navigateTo(`/posts/${postId}`);
@@ -322,7 +332,7 @@ export default function App() {
       setCategories(homepage.categories);
       setPosts(homepage.posts);
       setPagination(homepage.pagination || { page: 1, limit: pageSize, total: homepage.posts.length, totalPages: 1 });
-      setTodayCount(homepage.todayCount || { posts: 0, comments: 0, likes: 0 });
+      setTodayCount(homepage.todayCount || EMPTY_TODAY_COUNT);
       setPage(homepage.pagination?.page || 1);
       clearNotice();
 
@@ -476,6 +486,30 @@ export default function App() {
       });
   }, [route]);
 
+  useEffect(() => {
+    const previousRoutePage = previousRoutePageRef.current;
+    previousRoutePageRef.current = route.page;
+
+    if (route.page !== 'home' || previousRoutePage !== 'detail') {
+      return;
+    }
+
+    const restoreScroll = () => {
+      window.scrollTo({
+        top: homeScrollPositionRef.current,
+        behavior: 'auto'
+      });
+    };
+
+    const frameId = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(restoreScroll);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [route.page]);
+
   async function refreshPosts(
     nextSort = sort,
     nextCategoryId = selectedCategoryId,
@@ -497,6 +531,7 @@ export default function App() {
       limit: pageSize
     });
     const nextPosts = response.items;
+    setTodayCount(response.todayCount || EMPTY_TODAY_COUNT);
     setPosts((currentPosts) => {
       if (!append) {
         return nextPosts;
@@ -862,6 +897,43 @@ export default function App() {
       setBusy(false);
     }
   }
+
+  useEffect(() => {
+    if (route.page !== 'home') {
+      return undefined;
+    }
+
+    let active = true;
+
+    async function refreshHomepageTodayCount() {
+      try {
+        const nextTodayCount = await fetchTodayCount();
+        if (active) {
+          setTodayCount(nextTodayCount);
+        }
+      } catch (error) {
+        // Keep this refresh silent so background polling does not interrupt the home feed.
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        refreshHomepageTodayCount();
+      }
+    }
+
+    refreshHomepageTodayCount();
+    const intervalId = window.setInterval(refreshHomepageTodayCount, TODAY_COUNT_REFRESH_INTERVAL_MS);
+    window.addEventListener('focus', refreshHomepageTodayCount);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refreshHomepageTodayCount);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [route.page]);
 
   useEffect(() => {
     if (!isMobileViewport || route.page !== 'home' || !loadMoreRef.current) {
