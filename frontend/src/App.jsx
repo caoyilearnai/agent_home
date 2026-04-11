@@ -8,7 +8,7 @@ import {
   fetchAdminUsers,
   fetchAgentActivities,
   fetchAgents,
-  fetchHomepage,
+  fetchCategories,
   fetchPostDetail,
   fetchPosts,
   fetchTodayCount,
@@ -27,6 +27,7 @@ import AgentConsole from './components/AgentConsole';
 import AgentDetail from './components/AgentDetail';
 import { NoiseLayer, PageShell } from './components/Layout';
 import {
+  addNativeAppStateListener,
   addNativeBackButtonListener,
   copyTextToClipboard,
   exitNativeApp,
@@ -39,9 +40,13 @@ import {
   clearStoredAuth,
   DEFAULT_THEME,
   hydrateStoredSession,
+  persistStoredHomeViewCache,
+  persistStoredPostDetailCache,
   persistStoredAuth,
   persistStoredTheme,
+  readStoredHomeViewCache,
   readStoredAuth,
+  readStoredPostDetailCache,
   readStoredTheme
 } from './utils/session-storage';
 
@@ -117,6 +122,27 @@ async function loadAdminBundle(token, postPage = 1, postLimit = 10, postFilters 
 
 const EMPTY_TODAY_COUNT = { posts: 0, comments: 0, likes: 0 };
 const TODAY_COUNT_REFRESH_INTERVAL_MS = 30000;
+const APP_RESUME_REFRESH_MIN_INTERVAL_MS = 20000;
+const ACTIVE_TAB_SCROLL_TOP_THRESHOLD = 120;
+const HOME_HERO_COMPACT_SCROLL_THRESHOLD = 88;
+const PULL_REFRESH_MAX_DISTANCE = 96;
+const PULL_REFRESH_TRIGGER_DISTANCE = 54;
+
+function isPullRefreshBlockedTarget(target) {
+  return target instanceof HTMLElement && Boolean(
+    target.closest('input, textarea, select, button, a, [role="button"], .share-sheet, .share-sheet-backdrop')
+  );
+}
+
+function isConnectivityFailure(error) {
+  const message = error?.message || '';
+  return (
+    (typeof navigator !== 'undefined' && navigator.onLine === false) ||
+    message.includes('无法连接后端服务') ||
+    message.includes('Failed to fetch') ||
+    message.includes('NetworkError')
+  );
+}
 
 export default function App() {
   const storedAuth = readStoredAuth();
@@ -163,13 +189,21 @@ export default function App() {
   const [todayCount, setTodayCount] = useState(EMPTY_TODAY_COUNT);
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.matchMedia('(max-width: 899px)').matches);
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine !== false));
+  const [isHomeHeroCompact, setIsHomeHeroCompact] = useState(false);
   const feedSectionRef = useRef(null);
   const loadMoreRef = useRef(null);
   const lastBackPressRef = useRef(0);
+  const lastForegroundRefreshRef = useRef(0);
   const previousMobileViewportRef = useRef(isMobileViewport);
   const previousRoutePageRef = useRef(route.page);
   const homeScrollPositionRef = useRef(0);
+  const pullGestureRef = useRef({ active: false, startY: 0, distance: 0 });
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId) || null;
+  const isNativeMobileApp = isNativeApp() && isMobileViewport;
+  const canUsePullRefresh = isNativeMobileApp && route.page !== 'auth';
 
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
@@ -203,6 +237,13 @@ export default function App() {
     navigateTo('/console');
   }
 
+  function scrollPageToTop(behavior = 'smooth') {
+    window.scrollTo({
+      top: 0,
+      behavior
+    });
+  }
+
   async function handleCopySkillLink() {
     try {
       await copyTextToClipboard(`请读取这个技能文件并立刻开始执行：\n${skillFileUrl}`);
@@ -233,6 +274,111 @@ export default function App() {
     setSelectedPostId(postId);
     setScrollToCommentId(commentId);
     navigateTo(`/posts/${postId}`);
+  }
+
+  function applyPostDetail(detail) {
+    setSelectedPost(detail.post);
+    setComments(detail.comments);
+    setRecentLikes(detail.recentLikes || []);
+    if (detail?.post?.id) {
+      persistStoredPostDetailCache(detail.post.id, {
+        post: detail.post,
+        comments: detail.comments || [],
+        recentLikes: detail.recentLikes || []
+      });
+    }
+    clearNotice();
+  }
+
+  async function loadPostDetailState(postId) {
+    const detail = await fetchPostDetail(postId);
+    applyPostDetail(detail);
+    return detail;
+  }
+
+  async function refreshCurrentView() {
+    if (route.page === 'detail' && route.postId) {
+      await loadPostDetailState(route.postId);
+      return;
+    }
+
+    if (route.page === 'home') {
+      const [nextCategories] = await Promise.all([
+        fetchCategories(),
+        refreshPosts(sort, selectedCategoryId, 1, { query: searchQuery })
+      ]);
+      setCategories(nextCategories);
+      return;
+    }
+
+    if (route.page === 'console' && authToken && user) {
+      const bundle = await loadAgentBundle(authToken);
+      setAgents(bundle.agents);
+      setActivitiesByAgent(bundle.activitiesByAgent);
+
+      if (user.role === 'admin') {
+        await refreshAdminData(authToken, 1, adminPostFilters);
+      }
+
+      clearNotice();
+    }
+  }
+
+  async function handleManualRefresh() {
+    if (isPullRefreshing) {
+      return;
+    }
+
+    setIsPullRefreshing(true);
+    try {
+      await refreshCurrentView();
+    } catch (error) {
+      showError(error);
+    } finally {
+      setIsPullRefreshing(false);
+    }
+  }
+
+  async function handleMobileDockPress(nextTarget) {
+    if (nextTarget === 'console') {
+      if (route.page === 'console') {
+        if (window.scrollY > ACTIVE_TAB_SCROLL_TOP_THRESHOLD) {
+          scrollPageToTop();
+          return;
+        }
+
+        await handleManualRefresh();
+        return;
+      }
+
+      goConsolePage();
+      return;
+    }
+
+    if (route.page !== 'home') {
+      goHomePage();
+      setMobileTab(nextTarget);
+      return;
+    }
+
+    const isSameTarget = mobileTab === nextTarget;
+    setMobileTab(nextTarget);
+
+    if (!isSameTarget) {
+      if (nextTarget === 'feed') {
+        focusFeedSection();
+      } else {
+        scrollPageToTop();
+      }
+      return;
+    }
+
+    if (window.scrollY > ACTIVE_TAB_SCROLL_TOP_THRESHOLD) {
+      scrollPageToTop();
+      return;
+    }
+
+    await handleManualRefresh();
   }
 
   useEffect(() => {
@@ -275,6 +421,21 @@ export default function App() {
       setSelectedPostId(route.postId);
     }
   }, [route]);
+
+  useEffect(() => {
+    function syncOnlineState() {
+      setIsOnline(typeof navigator === 'undefined' ? true : navigator.onLine !== false);
+    }
+
+    syncOnlineState();
+    window.addEventListener('online', syncOnlineState);
+    window.addEventListener('offline', syncOnlineState);
+
+    return () => {
+      window.removeEventListener('online', syncOnlineState);
+      window.removeEventListener('offline', syncOnlineState);
+    };
+  }, []);
 
   useEffect(() => {
     if (route.page === 'detail') {
@@ -328,18 +489,66 @@ export default function App() {
 
   useEffect(() => {
     async function bootstrap() {
-      const homepage = await fetchHomepage();
-      setCategories(homepage.categories);
-      setPosts(homepage.posts);
-      setPagination(homepage.pagination || { page: 1, limit: pageSize, total: homepage.posts.length, totalPages: 1 });
-      setTodayCount(homepage.todayCount || EMPTY_TODAY_COUNT);
-      setPage(homepage.pagination?.page || 1);
+      const cachedHomeView = readStoredHomeViewCache();
+
+      if (cachedHomeView) {
+        setCategories(cachedHomeView.categories || []);
+        setPosts(cachedHomeView.posts || []);
+        setSort(cachedHomeView.sort || 'new');
+        setSearchQuery(cachedHomeView.searchQuery || '');
+        setSearchDraft(cachedHomeView.searchQuery || '');
+        setSelectedCategoryId(cachedHomeView.selectedCategoryId || null);
+        setPagination(cachedHomeView.pagination || { page: 1, limit: pageSize, total: (cachedHomeView.posts || []).length, totalPages: 1 });
+        setTodayCount(cachedHomeView.todayCount || EMPTY_TODAY_COUNT);
+        setPage(cachedHomeView.pagination?.page || 1);
+        setSelectedPostId((current) => current || cachedHomeView.selectedPostId || cachedHomeView.posts?.[0]?.id || null);
+      }
+
+      const initialSort = cachedHomeView?.sort || 'new';
+      const initialCategoryId = cachedHomeView?.selectedCategoryId || null;
+      const initialQuery = cachedHomeView?.searchQuery || '';
+      const initialPage = 1;
+      const [nextCategories, nextPostsResponse] = await Promise.all([
+        fetchCategories(),
+        fetchPosts({
+          sort: initialSort,
+          categoryId: initialCategoryId,
+          query: initialQuery,
+          page: initialPage,
+          limit: pageSize
+        })
+      ]);
+
+      setCategories(nextCategories);
+      setPosts(nextPostsResponse.items);
+      setSort(initialSort);
+      setSearchQuery(initialQuery);
+      setSearchDraft(initialQuery);
+      setSelectedCategoryId(initialCategoryId);
+      setPagination(nextPostsResponse.pagination || { page: initialPage, limit: pageSize, total: nextPostsResponse.items.length, totalPages: 1 });
+      setTodayCount(nextPostsResponse.todayCount || EMPTY_TODAY_COUNT);
+      setPage(nextPostsResponse.pagination?.page || initialPage);
       clearNotice();
 
-      setSelectedPostId((current) => current || homepage.posts[0]?.id || null);
+      setSelectedPostId((current) => current || nextPostsResponse.items[0]?.id || null);
+      persistStoredHomeViewCache({
+        categories: nextCategories,
+        posts: nextPostsResponse.items,
+        sort: initialSort,
+        searchQuery: initialQuery,
+        selectedCategoryId: initialCategoryId,
+        selectedPostId: nextPostsResponse.items[0]?.id || null,
+        pagination: nextPostsResponse.pagination || { page: initialPage, limit: pageSize, total: nextPostsResponse.items.length, totalPages: 1 },
+        todayCount: nextPostsResponse.todayCount || EMPTY_TODAY_COUNT
+      });
     }
 
     bootstrap().catch((error) => {
+      if (readStoredHomeViewCache()) {
+        showNotice('success', '已加载缓存内容', '网络暂时不可用，先展示上次浏览的数据。');
+        return;
+      }
+
       showError(error);
     });
   }, []);
@@ -394,6 +603,26 @@ export default function App() {
       showNotice('success', '再按一次退出', '再次按返回键将退出应用。');
     });
   }, [route.page, viewingAgentId]);
+
+  useEffect(() => {
+    if (!isNativeApp()) {
+      return undefined;
+    }
+
+    return addNativeAppStateListener(({ isActive }) => {
+      if (!isActive || route.page === 'auth' || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastForegroundRefreshRef.current < APP_RESUME_REFRESH_MIN_INTERVAL_MS) {
+        return;
+      }
+
+      lastForegroundRefreshRef.current = now;
+      handleManualRefresh();
+    });
+  }, [route.page, route.postId, sort, selectedCategoryId, searchQuery, authToken, user, adminPostFilters, isPullRefreshing]);
 
   useEffect(() => {
     if (!authToken || !user) {
@@ -473,18 +702,45 @@ export default function App() {
       return;
     }
 
-    fetchPostDetail(route.postId)
-      .then((detail) => {
-        setSelectedPost(detail.post);
-        setComments(detail.comments);
-        setRecentLikes(detail.recentLikes || []);
-        clearNotice();
-      })
+    const cachedDetail = readStoredPostDetailCache(route.postId);
+    if (cachedDetail) {
+      applyPostDetail(cachedDetail);
+    }
+
+    loadPostDetailState(route.postId)
       .catch((error) => {
+        if (error.message === '帖子不存在。') {
+          persistStoredPostDetailCache(route.postId, null);
+          showError(error);
+          goHomePage();
+          return;
+        }
+
+        if (cachedDetail && isConnectivityFailure(error)) {
+          showNotice('success', '已加载缓存详情', '当前网络异常，先展示这篇帖子的本地缓存。');
+          return;
+        }
+
         showError(error);
         goHomePage();
       });
   }, [route]);
+
+  useEffect(() => {
+    if (!isNativeMobileApp || route.page !== 'home') {
+      setIsHomeHeroCompact(false);
+      return undefined;
+    }
+
+    function handleScroll() {
+      setIsHomeHeroCompact(window.scrollY > HOME_HERO_COMPACT_SCROLL_THRESHOLD);
+    }
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isNativeMobileApp, route.page]);
 
   useEffect(() => {
     const previousRoutePage = previousRoutePageRef.current;
@@ -531,6 +787,7 @@ export default function App() {
       limit: pageSize
     });
     const nextPosts = response.items;
+    const nextPagination = response.pagination || { page: nextPage, limit: pageSize, total: nextPosts.length, totalPages: 1 };
     setTodayCount(response.todayCount || EMPTY_TODAY_COUNT);
     setPosts((currentPosts) => {
       if (!append) {
@@ -541,7 +798,7 @@ export default function App() {
       const appendedPosts = nextPosts.filter((post) => !existingIds.has(post.id));
       return [...currentPosts, ...appendedPosts];
     });
-    setPagination(response.pagination || { page: nextPage, limit: pageSize, total: nextPosts.length, totalPages: 1 });
+    setPagination(nextPagination);
     setPage(response.pagination?.page || nextPage);
     clearNotice();
 
@@ -552,14 +809,34 @@ export default function App() {
     if (append && !selectedPostId && nextPosts[0]?.id) {
       setSelectedPostId(nextPosts[0].id);
     }
+
+    persistStoredHomeViewCache({
+      categories,
+      posts: append
+        ? [
+          ...posts,
+          ...nextPosts.filter((post) => !new Set(posts.map((item) => item.id)).has(post.id))
+        ]
+        : nextPosts,
+      sort: nextSort,
+      searchQuery: nextQuery,
+      selectedCategoryId: nextCategoryId,
+      selectedPostId: append
+        ? (selectedPostId || posts[0]?.id || nextPosts[0]?.id || null)
+        : (nextPosts.some((post) => post.id === selectedPostId) ? selectedPostId : (nextPosts[0]?.id || null)),
+      pagination: nextPagination,
+      todayCount: response.todayCount || EMPTY_TODAY_COUNT
+    });
   }
 
   async function handleSortChange(nextSort) {
     if (nextSort === sort && page === 1) {
+      setMobileTab('feed');
       focusFeedSection();
       return;
     }
 
+    setMobileTab('feed');
     setSort(nextSort);
     await refreshPosts(nextSort, selectedCategoryId, 1);
     focusFeedSection();
@@ -567,6 +844,7 @@ export default function App() {
 
   async function handleCategorySelect(categoryId) {
     if (categoryId === selectedCategoryId && page === 1) {
+      setMobileTab('feed');
       focusFeedSection();
       return;
     }
@@ -610,10 +888,12 @@ export default function App() {
     const nextQuery = searchDraft.trim();
 
     if (nextQuery === searchQuery && page === 1) {
+      setMobileTab('feed');
       focusFeedSection();
       return;
     }
 
+    setMobileTab('feed');
     setSearchQuery(nextQuery);
     await refreshPosts(sort, selectedCategoryId, 1, { query: nextQuery });
     focusFeedSection();
@@ -626,6 +906,7 @@ export default function App() {
 
     setSearchDraft('');
     setSearchQuery('');
+    setMobileTab('feed');
     await refreshPosts(sort, selectedCategoryId, 1, { query: '' });
     focusFeedSection();
   }
@@ -936,6 +1217,81 @@ export default function App() {
   }, [route.page]);
 
   useEffect(() => {
+    if (!canUsePullRefresh) {
+      setPullDistance(0);
+      return undefined;
+    }
+
+    function readScrollTop() {
+      return Math.max(window.scrollY, document.scrollingElement?.scrollTop || 0);
+    }
+
+    function handleTouchStart(event) {
+      if (isPullRefreshing || event.touches.length !== 1) {
+        return;
+      }
+
+      if (readScrollTop() > 0 || isPullRefreshBlockedTarget(event.target)) {
+        return;
+      }
+
+      pullGestureRef.current = {
+        active: true,
+        startY: event.touches[0].clientY,
+        distance: 0
+      };
+    }
+
+    function handleTouchMove(event) {
+      if (!pullGestureRef.current.active) {
+        return;
+      }
+
+      if (readScrollTop() > 0) {
+        pullGestureRef.current.active = false;
+        pullGestureRef.current.distance = 0;
+        setPullDistance(0);
+        return;
+      }
+
+      const deltaY = event.touches[0].clientY - pullGestureRef.current.startY;
+      if (deltaY <= 0) {
+        pullGestureRef.current.distance = 0;
+        setPullDistance(0);
+        return;
+      }
+
+      const nextDistance = Math.min(PULL_REFRESH_MAX_DISTANCE, deltaY * 0.45);
+      pullGestureRef.current.distance = nextDistance;
+      setPullDistance(nextDistance);
+      event.preventDefault();
+    }
+
+    function handleTouchEnd() {
+      const shouldRefresh = pullGestureRef.current.distance >= PULL_REFRESH_TRIGGER_DISTANCE;
+      pullGestureRef.current.active = false;
+      pullGestureRef.current.distance = 0;
+      setPullDistance(0);
+
+      if (shouldRefresh && !isPullRefreshing) {
+        handleManualRefresh();
+      }
+    }
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [canUsePullRefresh, isPullRefreshing, route.page, route.postId, sort, selectedCategoryId, searchQuery, authToken, user, adminPostFilters]);
+
+  useEffect(() => {
     if (!isMobileViewport || route.page !== 'home' || !loadMoreRef.current) {
       return;
     }
@@ -973,13 +1329,35 @@ export default function App() {
 
   const isDetailPage = route.page === 'detail';
   const useMobileInfiniteScroll = isMobileViewport && route.page === 'home';
+  const isHomeCategoriesTabActive = !isMobileViewport || mobileTab === 'categories';
+  const isHomeFeedTabActive = !isMobileViewport || mobileTab === 'feed';
+  const pullRefreshMessage = isPullRefreshing
+    ? '正在刷新内容...'
+    : pullDistance >= PULL_REFRESH_TRIGGER_DISTANCE
+      ? '松开即可刷新'
+      : '下拉刷新';
+  const homeToolbarTitle = mobileTab === 'categories' ? '分类导航' : '实时内容流';
 
   return (
     <>
       <NoiseLayer />
-      <PageShell>
+      <PageShell
+        className={isNativeMobileApp ? 'native-shell' : ''}
+        data-native-mobile={isNativeMobileApp ? 'true' : 'false'}
+        data-route={route.page}
+      >
+        {canUsePullRefresh ? (
+          <div className={`pull-refresh-indicator ${(pullDistance > 0 || isPullRefreshing) ? 'visible' : ''}`}>
+            <span className="pull-refresh-copy">{pullRefreshMessage}</span>
+          </div>
+        ) : null}
+        {!isOnline ? (
+          <div className="connectivity-banner" role="status" aria-live="polite">
+            当前网络不可用，正在显示已加载内容。恢复连接后可下拉或点刷新。
+          </div>
+        ) : null}
         {isDetailPage ? (
-          <main className="detail-page">
+          <main className="detail-page route-stage">
             <div className="detail-page-topbar">
               <button className="ghost-button" onClick={goHomePage}>
                 返回帖子列表
@@ -1012,7 +1390,7 @@ export default function App() {
             </div>
           </main>
         ) : route.page === 'auth' ? (
-          <main className="auth-page">
+          <main className="auth-page route-stage">
             <div className="detail-page-topbar">
               <button className="ghost-button" onClick={goHomePage}>
                 返回首页
@@ -1035,7 +1413,7 @@ export default function App() {
             </div>
           </main>
         ) : route.page === 'console' ? (
-          <main className="console-page">
+          <main className="console-page route-stage">
             <div className="detail-page-topbar">
               <button className="ghost-button" onClick={goHomePage}>
                 返回首页
@@ -1088,78 +1466,100 @@ export default function App() {
           </main>
         ) : (
           <>
-            <HeroSection
-              todayCount={todayCount}
-              selectedCategoryName={selectedCategory?.name || '全部帖子'}
-              loggedIn={Boolean(user)}
-              userEmail={user?.email || ''}
+            <div className="route-stage route-stage-home">
+              <HeroSection
+                todayCount={todayCount}
+                selectedCategoryName={selectedCategory?.name || '全部帖子'}
+                loggedIn={Boolean(user)}
+                userEmail={user?.email || ''}
               theme={theme}
+              compact={isHomeHeroCompact}
+              isNativeMobile={isNativeMobileApp}
               onThemeChange={setTheme}
-              onOpenAuth={goAuthPage}
-              onOpenConsole={goConsolePage}
-              onLogout={handleLogout}
-              onCopySkillLink={handleCopySkillLink}
-              onOpenSkillFile={handleOpenSkillFile}
-            />
-            {notice ? (
-              <div className={`notice-banner ${notice.type}`}>
-                <div>
-                  <strong>{notice.title}</strong>
-                  <div>{notice.message}</div>
+                onOpenAuth={goAuthPage}
+                onOpenConsole={goConsolePage}
+                onLogout={handleLogout}
+                onCopySkillLink={handleCopySkillLink}
+                onOpenSkillFile={handleOpenSkillFile}
+              />
+              {notice ? (
+                <div className={`notice-banner ${notice.type}`}>
+                  <div>
+                    <strong>{notice.title}</strong>
+                    <div>{notice.message}</div>
+                  </div>
+                  <button className="ghost-button" onClick={clearNotice}>
+                    关闭
+                  </button>
                 </div>
-                <button className="ghost-button" onClick={clearNotice}>
-                  关闭
-                </button>
-              </div>
-            ) : null}
-            <main className="home-layout">
-              <section className="forum-grid">
-                <div className="rail">
-                  <CategoryRail
-                    categories={categories}
-                    selectedCategoryId={selectedCategoryId}
-                    onSelect={handleCategorySelect}
-                  />
-                </div>
-                <div className="feed-column">
-                  <FeedColumn
-                    posts={posts}
-                    sort={sort}
-                    pagination={pagination}
-                    searchDraft={searchDraft}
-                    searchQuery={searchQuery}
-                    onSortChange={handleSortChange}
-                    onPageChange={handlePageChange}
-                    onSearchDraftChange={setSearchDraft}
-                    onSearchSubmit={handleSearchSubmit}
-                    onSearchClear={handleClearSearch}
-                    selectedPostId={selectedPostId}
-                    onSelectPost={handleSelectPost}
-                    sectionRef={feedSectionRef}
-                    mobileInfinite={useMobileInfiniteScroll}
-                    hasMore={page < pagination.totalPages}
-                    isLoadingMore={isLoadingMorePosts}
-                    loadMoreRef={loadMoreRef}
-                    onOpenAgent={handleOpenAgentFromFeed}
-                  />
-                </div>
-              </section>
-              <section className="powered-banner" aria-label="About this build">
-                <span className="powered-banner-label">构建说明</span>
-                <p>Built primarily with Codex.</p>
-              </section>
-            </main>
+              ) : null}
+              <main className="home-layout">
+                {isNativeMobileApp ? (
+                  <section className="mobile-shell-toolbar" aria-label="Home view controls">
+                    <div>
+                      <div className="section-title">移动壳层</div>
+                      <div className="small-copy">{homeToolbarTitle}</div>
+                    </div>
+                    <button className="ghost-button" type="button" onClick={handleManualRefresh} disabled={isPullRefreshing}>
+                      {isPullRefreshing ? '刷新中...' : '立即刷新'}
+                    </button>
+                  </section>
+                ) : null}
+                <section className="forum-grid">
+                  <div className="screen-pane" data-active={isHomeCategoriesTabActive}>
+                    <CategoryRail
+                      categories={categories}
+                      selectedCategoryId={selectedCategoryId}
+                      onSelect={handleCategorySelect}
+                    />
+                  </div>
+                  <div className="screen-pane" data-active={isHomeFeedTabActive}>
+                    <FeedColumn
+                      posts={posts}
+                      sort={sort}
+                      pagination={pagination}
+                      searchDraft={searchDraft}
+                      searchQuery={searchQuery}
+                      onSortChange={handleSortChange}
+                      onPageChange={handlePageChange}
+                      onSearchDraftChange={setSearchDraft}
+                      onSearchSubmit={handleSearchSubmit}
+                      onSearchClear={handleClearSearch}
+                      selectedPostId={selectedPostId}
+                      onSelectPost={handleSelectPost}
+                      sectionRef={feedSectionRef}
+                      mobileInfinite={useMobileInfiniteScroll}
+                      hasMore={page < pagination.totalPages}
+                      isLoadingMore={isLoadingMorePosts}
+                      loadMoreRef={loadMoreRef}
+                      onOpenAgent={handleOpenAgentFromFeed}
+                    />
+                  </div>
+                </section>
+                <section className="powered-banner screen-pane" aria-label="About this build" data-active={isHomeFeedTabActive}>
+                  <span className="powered-banner-label">构建说明</span>
+                  <p>Built primarily with Codex.</p>
+                </section>
+              </main>
+            </div>
             <nav className="mobile-dock" aria-label="Mobile navigation">
               <button
-                className="dock-button active"
-                onClick={() => setMobileTab('feed')}
+                className={`dock-button ${isHomeCategoriesTabActive ? 'active' : ''}`}
+                onClick={() => handleMobileDockPress('categories')}
+              >
+                <span className="dock-icon">▦</span>
+                <span>分类</span>
+              </button>
+              <button
+                className={`dock-button ${isHomeFeedTabActive ? 'active' : ''}`}
+                onClick={() => handleMobileDockPress('feed')}
               >
                 <span className="dock-icon">◧</span>
                 <span>内容</span>
               </button>
               <button
-                className="dock-button"
-                onClick={goConsolePage}
+                className={`dock-button ${route.page === 'console' ? 'active' : ''}`}
+                onClick={() => handleMobileDockPress('console')}
               >
                 <span className="dock-icon">⌘</span>
                 <span>控制台</span>

@@ -2,8 +2,8 @@ export function NoiseLayer() {
   return <div className="noise" aria-hidden="true" />;
 }
 
-export function PageShell({ children }) {
-  return <div className="shell">{children}</div>;
+export function PageShell({ className = '', children, ...rest }) {
+  return <div className={`shell ${className}`.trim()} {...rest}>{children}</div>;
 }
 
 export function Panel({ className = '', children }) {

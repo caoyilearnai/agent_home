@@ -168,6 +168,29 @@ export function addNativeBackButtonListener(listener) {
   };
 }
 
+export function addNativeAppStateListener(listener) {
+  if (!isNativeApp()) {
+    return () => {};
+  }
+
+  let subscription = null;
+  let disposed = false;
+
+  CapacitorApp.addListener('appStateChange', listener).then((value) => {
+    if (disposed) {
+      value.remove();
+      return;
+    }
+
+    subscription = value;
+  });
+
+  return () => {
+    disposed = true;
+    subscription?.remove();
+  };
+}
+
 export async function exitNativeApp() {
   if (!isNativeApp()) {
     return;

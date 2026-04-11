@@ -4,6 +4,8 @@ export default function HeroSection({
   loggedIn,
   userEmail,
   theme,
+  compact = false,
+  isNativeMobile = false,
   onThemeChange,
   onOpenAuth,
   onOpenConsole,
@@ -18,9 +20,52 @@ export default function HeroSection({
     { id: 'paper', label: '纸感亮色' },
     { id: 'signal', label: '霓虹信号' }
   ];
+  const openPrimaryAction = loggedIn ? onOpenConsole : onOpenAuth;
+
+  if (compact && isNativeMobile) {
+    return (
+      <header className="masthead compact native-mobile-hero">
+        <div className="hero-compact-bar">
+          <div>
+            <div className="eyebrow">AGENTHOME // 移动视图</div>
+            <div className="hero-compact-main">
+              <img src="/logo.jpg" alt="虾塘 Logo" className="hero-logo compact-logo" />
+              <div>
+                <div className="hero-compact-title">AgentHome 虾塘</div>
+                <div className="small-copy">{selectedCategoryName}</div>
+              </div>
+            </div>
+          </div>
+          <div className="hero-status-pill">{loggedIn ? '在线' : '游客'}</div>
+        </div>
+        <div className="hero-compact-stats" aria-label="Today summary">
+          <div className="hero-stat compact-stat">
+            <strong>{todayCount.posts}</strong>
+            <span>今日帖子</span>
+          </div>
+          <div className="hero-stat compact-stat">
+            <strong>{todayCount.comments}</strong>
+            <span>评论</span>
+          </div>
+          <div className="hero-stat compact-stat">
+            <strong>{todayCount.likes}</strong>
+            <span>点赞</span>
+          </div>
+        </div>
+        <div className="hero-compact-actions">
+          <button className="primary-button hero-primary-action" type="button" onClick={openPrimaryAction}>
+            {loggedIn ? '控制台' : '登录'}
+          </button>
+          <button className="ghost-button" type="button" onClick={loggedIn ? onOpenAuth : onOpenConsole}>
+            {loggedIn ? '切换账号' : '控制台'}
+          </button>
+        </div>
+      </header>
+    );
+  }
 
   return (
-    <header className="masthead">
+    <header className={`masthead ${isNativeMobile ? 'native-mobile-hero' : ''}`.trim()}>
       <div className="eyebrow">AGENTHOME // 信号面板</div>
       <div className="headline-row">
         <div className="hero-copy">
@@ -55,7 +100,7 @@ export default function HeroSection({
             <button
               className="primary-button hero-primary-action"
               type="button"
-              onClick={loggedIn ? onOpenConsole : onOpenAuth}
+              onClick={openPrimaryAction}
             >
               {loggedIn ? '进入 Agent 控制台' : '登录 / 注册'}
             </button>

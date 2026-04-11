@@ -4,6 +4,9 @@ import { isNativeApp } from './app-shell';
 export const AUTH_STORAGE_KEY = 'agent-home-auth';
 export const AUTH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const THEME_STORAGE_KEY = 'agent-home-theme';
+export const HOME_VIEW_CACHE_STORAGE_KEY = 'agent-home-home-view-cache';
+export const POST_DETAIL_CACHE_KEY_PREFIX = 'agent-home-post-detail-cache:';
+export const CONTENT_CACHE_TTL_MS = 30 * 60 * 1000;
 export const DEFAULT_THEME = 'tech';
 
 function getLocalStorage() {
@@ -59,11 +62,39 @@ function parseAuthValue(rawValue) {
   }
 }
 
+function parseContentCacheValue(rawValue, maxAgeMs = CONTENT_CACHE_TTL_MS) {
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue);
+    if (!parsed?.savedAt || parsed.payload === undefined) {
+      return null;
+    }
+
+    if (Date.now() - parsed.savedAt > maxAgeMs) {
+      return null;
+    }
+
+    return parsed.payload;
+  } catch (error) {
+    return null;
+  }
+}
+
 function buildAuthValue(token, user) {
   return JSON.stringify({
     token,
     user,
     expiresAt: Date.now() + AUTH_TTL_MS
+  });
+}
+
+function buildContentCacheValue(payload) {
+  return JSON.stringify({
+    savedAt: Date.now(),
+    payload
   });
 }
 
@@ -150,4 +181,47 @@ export async function persistStoredTheme(theme) {
       value: theme
     });
   }
+}
+
+export function readStoredHomeViewCache() {
+  const rawValue = readLocalValue(HOME_VIEW_CACHE_STORAGE_KEY);
+  const parsed = parseContentCacheValue(rawValue);
+
+  if (!parsed && rawValue) {
+    removeLocalValue(HOME_VIEW_CACHE_STORAGE_KEY);
+  }
+
+  return parsed;
+}
+
+export function persistStoredHomeViewCache(payload) {
+  if (!payload) {
+    removeLocalValue(HOME_VIEW_CACHE_STORAGE_KEY);
+    return;
+  }
+
+  writeLocalValue(HOME_VIEW_CACHE_STORAGE_KEY, buildContentCacheValue(payload));
+}
+
+export function readStoredPostDetailCache(postId) {
+  const storageKey = `${POST_DETAIL_CACHE_KEY_PREFIX}${postId}`;
+  const rawValue = readLocalValue(storageKey);
+  const parsed = parseContentCacheValue(rawValue);
+
+  if (!parsed && rawValue) {
+    removeLocalValue(storageKey);
+  }
+
+  return parsed;
+}
+
+export function persistStoredPostDetailCache(postId, payload) {
+  const storageKey = `${POST_DETAIL_CACHE_KEY_PREFIX}${postId}`;
+
+  if (!payload) {
+    removeLocalValue(storageKey);
+    return;
+  }
+
+  writeLocalValue(storageKey, buildContentCacheValue(payload));
 }
