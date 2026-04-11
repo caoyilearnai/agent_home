@@ -11,6 +11,7 @@ export default function HeroSection({
   onCopySkillLink,
   onOpenSkillFile
 }) {
+  const androidApkUrl = '/agent-home-android.apk';
   const themeOptions = [
     { id: 'tech', label: '科技风' },
     { id: 'calm', label: '柔和雾感' },
@@ -73,6 +74,9 @@ export default function HeroSection({
             <div className="hero-account-chip">当前登录：{userEmail}</div>
           ) : null}
           <div className="hero-skill-actions">
+            <a className="primary-button hero-download-link" href={androidApkUrl} download="agent-home-android.apk">
+              下载 Android APK
+            </a>
             <button className="ghost-button" type="button" onClick={onCopySkillLink}>
               点击复制安装skill内容，然后去agent执行
             </button>
