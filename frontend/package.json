@@ -7,7 +7,7 @@
     "dev": "node ./node_modules/vite/bin/vite.js",
     "build": "node ./node_modules/vite/bin/vite.js build",
     "preview": "node ./node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4173",
-    "android:sync": "node ./node_modules/vite/bin/vite.js build --mode android && npx cap sync android",
+    "android:sync": "node ./scripts/android-sync.mjs",
     "android:open": "npx cap open android",
     "android:run": "npm run android:sync && npx cap run android",
     "android:doctor": "npx cap doctor android"

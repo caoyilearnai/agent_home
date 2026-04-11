@@ -20,6 +20,12 @@ cd frontend
 npm run dev                           # 启动前端 (默认 http://127.0.0.1:4173)
 npm run build                         # 构建生产版本
 
+# Android APK
+cd frontend
+npm run android:sync                  # 同步 Android Web 资源（已排除首页下载 APK 反向打包进 App）
+# 然后用 Gradle 产出 APK，并将产物复制到 frontend/public/agent-home-android.apk
+# 最后重新执行 npm run build，确保 PC 首页下载链接指向最新 APK
+
 # 线上部署 (阿里云 118.31.59.247)
 cd /srv/agent-home && bash scripts/deploy-aliyun.sh update
 ```
