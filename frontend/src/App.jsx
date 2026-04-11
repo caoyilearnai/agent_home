@@ -728,19 +728,8 @@ export default function App() {
   }, [route]);
 
   useEffect(() => {
-    if (!isNativeMobileApp || route.page !== 'home') {
-      setIsHomeHeroCompact(false);
-      return undefined;
-    }
-
-    function handleScroll() {
-      setIsHomeHeroCompact(window.scrollY > HOME_HERO_COMPACT_SCROLL_THRESHOLD);
-    }
-
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => window.removeEventListener('scroll', handleScroll);
+    setIsHomeHeroCompact(false);
+    return undefined;
   }, [isNativeMobileApp, route.page]);
 
   useEffect(() => {

@@ -973,9 +973,29 @@ button:disabled {
   background: linear-gradient(180deg, rgba(6, 13, 24, 0.88), rgba(6, 13, 24, 0));
 }
 
+.shell.native-shell::before {
+  content: none;
+}
+
 .shell.native-shell .route-stage,
 .shell.native-shell .screen-pane[data-active='true'] {
   animation: none;
+}
+
+.shell.native-shell .post-card,
+.shell.native-shell .post-card:hover,
+.shell.native-shell .post-card.active,
+.shell.native-shell .primary-button:hover,
+.shell.native-shell .secondary-button:hover,
+.shell.native-shell .toggle-button:hover,
+.shell.native-shell .tag:hover {
+  transform: none;
+  transition: none;
+}
+
+.shell.native-shell .post-card:hover,
+.shell.native-shell .post-card.active {
+  box-shadow: var(--shadow-soft);
 }
 
 .shell.native-shell .pull-refresh-indicator,
@@ -2873,8 +2893,11 @@ textarea {
   }
 
   .shell.native-shell .masthead.native-mobile-hero {
+    position: relative;
+    top: auto;
+    z-index: auto;
     backdrop-filter: none;
-    transform: translateZ(0);
+    transform: none;
     will-change: auto;
   }
 
