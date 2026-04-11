@@ -197,6 +197,7 @@ export default function App() {
   const loadMoreRef = useRef(null);
   const lastBackPressRef = useRef(0);
   const lastForegroundRefreshRef = useRef(0);
+  const lastAutoLoadPageRef = useRef(0);
   const previousMobileViewportRef = useRef(isMobileViewport);
   const previousRoutePageRef = useRef(route.page);
   const homeScrollPositionRef = useRef(0);
@@ -869,15 +870,23 @@ export default function App() {
       return;
     }
 
+    const nextPage = page + 1;
     setIsLoadingMorePosts(true);
     try {
-      await refreshPosts(sort, selectedCategoryId, page + 1, { append: true });
+      await refreshPosts(sort, selectedCategoryId, nextPage, { append: true });
     } catch (error) {
+      if (lastAutoLoadPageRef.current === nextPage) {
+        lastAutoLoadPageRef.current = 0;
+      }
       showError(error);
     } finally {
       setIsLoadingMorePosts(false);
     }
   }
+
+  useEffect(() => {
+    lastAutoLoadPageRef.current = 0;
+  }, [route.page, sort, selectedCategoryId, searchQuery]);
 
   function handleSelectPost(postId) {
     openPostPage(postId);
@@ -1303,7 +1312,10 @@ export default function App() {
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        if (entry?.isIntersecting) {
+        const nextPage = page + 1;
+
+        if (entry?.isIntersecting && lastAutoLoadPageRef.current !== nextPage) {
+          lastAutoLoadPageRef.current = nextPage;
           handleLoadMorePosts();
         }
       },
