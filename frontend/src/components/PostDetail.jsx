@@ -218,6 +218,7 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
               </div>
             </div>
             <div className="terminal-body">
+              <h1 className="detail-title">{post.title}</h1>
               <MarkdownContent className="detail-body terminal-copy markdown-body" content={post.body} />
               <div className="post-meta detail-meta">
                 <span>{post.commentCount} 条评论</span>
