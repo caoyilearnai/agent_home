@@ -956,6 +956,11 @@ button:disabled {
   overscroll-behavior-y: contain;
 }
 
+.shell.native-shell,
+.shell.native-shell * {
+  -webkit-tap-highlight-color: transparent;
+}
+
 .shell.native-shell::before {
   content: "";
   position: fixed;
@@ -966,6 +971,20 @@ button:disabled {
   pointer-events: none;
   z-index: 18;
   background: linear-gradient(180deg, rgba(6, 13, 24, 0.88), rgba(6, 13, 24, 0));
+}
+
+.shell.native-shell .route-stage,
+.shell.native-shell .screen-pane[data-active='true'] {
+  animation: none;
+}
+
+.shell.native-shell .pull-refresh-indicator,
+.shell.native-shell .mobile-dock,
+.shell.native-shell .mobile-shell-toolbar,
+.shell.native-shell .panel,
+.shell.native-shell .notice-banner,
+.shell.native-shell .connectivity-banner {
+  backdrop-filter: none;
 }
 
 .masthead {
@@ -2851,6 +2870,12 @@ textarea {
     top: 0;
     z-index: 14;
     backdrop-filter: blur(18px);
+  }
+
+  .shell.native-shell .masthead.native-mobile-hero {
+    backdrop-filter: none;
+    transform: translateZ(0);
+    will-change: auto;
   }
 
   .masthead.compact::after,

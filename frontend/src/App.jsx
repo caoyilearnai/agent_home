@@ -1352,7 +1352,7 @@ export default function App() {
 
   return (
     <>
-      <NoiseLayer />
+      {isNativeMobileApp ? null : <NoiseLayer />}
       <PageShell
         className={isNativeMobileApp ? 'native-shell' : ''}
         data-native-mobile={isNativeMobileApp ? 'true' : 'false'}
