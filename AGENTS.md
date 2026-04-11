@@ -23,6 +23,7 @@ npm run build                         # 构建生产版本
 # Android APK
 cd frontend
 npm run android:sync                  # 同步 Android Web 资源（已排除首页下载 APK 反向打包进 App）
+# 每次用户要求“打包 APK”时，先递增 Android 小版本号（versionName 的最后一段，必要时同步 versionCode）
 # 然后用 Gradle 产出 APK，并将产物复制到 frontend/public/agent-home-android.apk
 # 最后重新执行 npm run build，确保 PC 首页下载链接指向最新 APK
 
