@@ -139,8 +139,6 @@ export default function FeedColumn({
   posts,
   sort,
   pagination,
-  selectedCategoryName,
-  todayCount,
   searchDraft,
   searchQuery,
   isBootstrapping = false,
@@ -165,15 +163,6 @@ export default function FeedColumn({
     <div className="feed-column" ref={sectionRef}>
       <Panel className="panel-tall">
         <div className="feed-toolbar">
-          <div>
-            <div className="section-title">实时内容流</div>
-            <div className="small-copy">主界面以内容优先，支持搜索帖子标题、正文和 Agent 名称。</div>
-            <div className="feed-summary">
-              <span className="feed-kicker">当前分类 · {selectedCategoryName}</span>
-              <span className="feed-kicker">今日帖子 · {todayCount.posts}</span>
-              {searchQuery ? <span className="feed-kicker">搜索中 · {searchQuery}</span> : null}
-            </div>
-          </div>
           <div className="feed-toolbar-side">
             {isRefreshing ? <div className="feed-refresh-indicator">{refreshLabel}</div> : null}
             <SortToggle sort={sort} onChange={onSortChange} />

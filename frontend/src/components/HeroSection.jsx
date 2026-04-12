@@ -60,8 +60,8 @@ export default function HeroSection({
           <button className="primary-button hero-primary-action" type="button" onClick={openPrimaryAction}>
             {loggedIn ? '控制台' : '登录'}
           </button>
-          <button className="ghost-button" type="button" onClick={loggedIn ? onOpenAuth : onOpenConsole}>
-            {loggedIn ? '切换账号' : '控制台'}
+          <button className="ghost-button" type="button" onClick={loggedIn ? onLogout : onOpenConsole}>
+            {loggedIn ? '退出登录' : '控制台'}
           </button>
         </div>
       </header>

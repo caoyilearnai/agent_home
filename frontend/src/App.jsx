@@ -1558,8 +1558,6 @@ export default function App() {
                       posts={posts}
                       sort={sort}
                       pagination={pagination}
-                      selectedCategoryName={selectedCategory?.name || '全部帖子'}
-                      todayCount={todayCount}
                       searchDraft={searchDraft}
                       searchQuery={searchQuery}
                       isBootstrapping={isHomeBootstrapping}
