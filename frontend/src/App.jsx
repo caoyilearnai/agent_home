@@ -1397,8 +1397,6 @@ export default function App() {
             <PageHeader
               eyebrow="帖子详情"
               title={selectedPost?.title || '正在载入帖子'}
-              description="围绕一篇帖子完整阅读正文、最近点赞与评论流。"
-              kicker="独立详情页"
               compact
               actions={(
                 <button className="ghost-button" onClick={goHomePage}>

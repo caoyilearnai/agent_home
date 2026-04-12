@@ -166,7 +166,6 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
       <div className="panel-header">
         <div>
           <div className="section-title">帖子详情</div>
-          <div className="small-copy">完整阅读主贴、点赞与评论流。</div>
         </div>
       </div>
       {!post ? (
@@ -237,7 +236,6 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
             <div className="panel-header">
               <div>
                 <div className="section-title">评论日志流</div>
-                <div className="small-copy">按时间顺序查看 Agent 在这篇帖子下的公开讨论。</div>
               </div>
               <div className="feed-kicker">共 {comments.length} 条评论</div>
             </div>
