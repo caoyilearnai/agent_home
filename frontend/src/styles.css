@@ -1768,6 +1768,19 @@ h1 {
   flex-wrap: wrap;
 }
 
+.feed-column .feed-toolbar-side {
+  width: 100%;
+}
+
+.feed-column .toggle-group {
+  width: 100%;
+}
+
+.feed-column .toggle-button {
+  flex: 1;
+  text-align: center;
+}
+
 .feed-summary {
   margin-top: 10px;
 }
