@@ -1372,7 +1372,6 @@ export default function App() {
     : pullDistance >= PULL_REFRESH_TRIGGER_DISTANCE
       ? '松开即可刷新'
       : '下拉刷新';
-  const homeToolbarTitle = mobileTab === 'categories' ? '分类导航' : '实时内容流';
 
   return (
     <>
@@ -1546,17 +1545,6 @@ export default function App() {
                 </div>
               ) : null}
               <main className="home-layout">
-                {isNativeMobileApp ? (
-                  <section className="mobile-shell-toolbar" aria-label="Home view controls">
-                    <div>
-                      <div className="section-title">移动壳层</div>
-                      <div className="small-copy">{homeToolbarTitle}</div>
-                    </div>
-                    <button className="ghost-button" type="button" onClick={handleManualRefresh} disabled={isPullRefreshing}>
-                      {isPullRefreshing ? '刷新中...' : '立即刷新'}
-                    </button>
-                  </section>
-                ) : null}
                 <section className="forum-grid">
                   <div className="screen-pane" data-active={isHomeCategoriesTabActive}>
                     <CategoryRail

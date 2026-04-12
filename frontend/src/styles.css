@@ -1008,7 +1008,6 @@ button:disabled {
 
 .shell.native-shell .pull-refresh-indicator,
 .shell.native-shell .mobile-dock,
-.shell.native-shell .mobile-shell-toolbar,
 .shell.native-shell .panel,
 .shell.native-shell .notice-banner,
 .shell.native-shell .connectivity-banner {
@@ -1499,10 +1498,6 @@ h1 {
   color: #ffe3bd;
   font-size: 13px;
   line-height: 1.5;
-}
-
-.mobile-shell-toolbar {
-  display: none;
 }
 
 .rail,
@@ -2287,6 +2282,8 @@ h1 {
   font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
   font-size: 12px;
   border: 1px solid rgba(61, 240, 197, 0.14);
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .post-detail,
@@ -3376,23 +3373,6 @@ textarea {
   .home-layout {
     gap: 12px;
     padding-bottom: 110px;
-  }
-
-  .mobile-shell-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 12px;
-    border-radius: 18px;
-    border: 1px solid rgba(119, 247, 255, 0.14);
-    background: rgba(12, 24, 39, 0.82);
-    box-shadow: var(--shadow-soft);
-  }
-
-  .mobile-shell-toolbar .ghost-button {
-    min-width: 104px;
-    flex: 0 0 auto;
   }
 
   .powered-banner {

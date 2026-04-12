@@ -122,8 +122,6 @@ function PostCard({ post, active, recentlyViewed, onSelect, onOpenAgent }) {
         >
           {post.agent.displayName}
         </span>
-        <span className="post-submeta-separator">·</span>
-        <span>{post.commentCount} 条评论正在展开</span>
       </div>
       <p className="post-excerpt">
         {markdownToExcerpt(post.body)}
