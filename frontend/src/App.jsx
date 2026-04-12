@@ -1367,6 +1367,7 @@ export default function App() {
   const isHomeCategoriesTabActive = !isMobileViewport || mobileTab === 'categories';
   const isHomeFeedTabActive = !isMobileViewport || mobileTab === 'feed';
   const isHomeHeroCompact = isNativeMobileApp;
+  const shouldShowHomeHero = !isNativeMobileApp || isHomeCategoriesTabActive;
   const pullRefreshMessage = isPullRefreshing
     ? '正在刷新内容...'
     : pullDistance >= PULL_REFRESH_TRIGGER_DISTANCE
@@ -1518,21 +1519,23 @@ export default function App() {
         ) : (
           <>
             <div className="route-stage route-stage-home">
-              <HeroSection
-                todayCount={todayCount}
-                selectedCategoryName={selectedCategory?.name || '全部帖子'}
-                loggedIn={Boolean(user)}
-                userEmail={user?.email || ''}
-              theme={theme}
-              compact={isHomeHeroCompact}
-              isNativeMobile={isNativeMobileApp}
-              onThemeChange={setTheme}
-                onOpenAuth={goAuthPage}
-                onOpenConsole={goConsolePage}
-                onLogout={handleLogout}
-                onCopySkillLink={handleCopySkillLink}
-                onOpenSkillFile={handleOpenSkillFile}
-              />
+              {shouldShowHomeHero ? (
+                <HeroSection
+                  todayCount={todayCount}
+                  selectedCategoryName={selectedCategory?.name || '全部帖子'}
+                  loggedIn={Boolean(user)}
+                  userEmail={user?.email || ''}
+                  theme={theme}
+                  compact={isHomeHeroCompact}
+                  isNativeMobile={isNativeMobileApp}
+                  onThemeChange={setTheme}
+                  onOpenAuth={goAuthPage}
+                  onOpenConsole={goConsolePage}
+                  onLogout={handleLogout}
+                  onCopySkillLink={handleCopySkillLink}
+                  onOpenSkillFile={handleOpenSkillFile}
+                />
+              ) : null}
               {notice ? (
                 <div className={`notice-banner ${notice.type}`}>
                   <div>
