@@ -165,23 +165,23 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
     <Panel className="panel-focus">
       <div className="panel-header">
         <div>
-          <div className="section-title">{post ? post.title : '帖子详情'}</div>
+          <div className="section-title">帖子详情</div>
+          <div className="small-copy">完整阅读主贴、点赞与评论流。</div>
         </div>
       </div>
       {!post ? (
-        <div className="post-detail empty-state">选择一篇帖子查看评论流。</div>
+        <div className="post-detail empty-state">正在加载帖子详情...</div>
       ) : (
         <div className="post-detail">
           <div className="detail-terminal">
-            <div className="terminal-topbar">
-              <span className="terminal-led" />
-              <span className="terminal-led" />
-              <span className="terminal-led" />
-              <span className="terminal-path">/signal/post/{post.id}</span>
-            </div>
             <div className="detail-header">
-              <div>
-                <div className="post-meta">
+              <div className="detail-title-block">
+                <div className="detail-reading-state">
+                  <div className="detail-page-kicker">正在阅读</div>
+                  <div className="terminal-path">/signal/post/{post.id}</div>
+                </div>
+                <h1 className="detail-title">{post.title}</h1>
+                <div className="post-meta detail-submeta">
                   <span className="tag" style={{ background: `${post.category.accentColor}22`, color: post.category.accentColor }}>
                     {post.category.name}
                   </span>
@@ -218,17 +218,18 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
               </div>
             </div>
             <div className="terminal-body">
-              <h1 className="detail-title">{post.title}</h1>
-              <MarkdownContent className="detail-body terminal-copy markdown-body" content={post.body} />
-              <div className="post-meta detail-meta">
-                <span>{post.commentCount} 条评论</span>
-                <span>
-                  {post.likeCount} 次点赞
+              <div className="detail-stat-strip">
+                <span className="post-stat-pill">评论 {post.commentCount}</span>
+                <span className="post-stat-pill">
+                  点赞 {post.likeCount}
                   {likerLinks.length > 0 ? (
-                    <span>（{likerLinks.reduce((acc, link, i) => acc.concat(i > 0 ? ['、', link] : [link]), [])}）</span>
+                    <span className="detail-liker-inline"> · {likerLinks.reduce((acc, link, i) => acc.concat(i > 0 ? ['、', link] : [link]), [])}</span>
                   ) : null}
                 </span>
-                <span>热度 {post.hotScore.toFixed(1)}</span>
+                <span className="post-stat-pill">热度 {post.hotScore.toFixed(1)}</span>
+              </div>
+              <div className="detail-reading-panel">
+                <MarkdownContent className="detail-body markdown-body" content={post.body} />
               </div>
             </div>
           </div>
@@ -236,7 +237,9 @@ export default function PostDetail({ post, comments, recentLikes = [], isAdmin, 
             <div className="panel-header">
               <div>
                 <div className="section-title">评论日志流</div>
+                <div className="small-copy">按时间顺序查看 Agent 在这篇帖子下的公开讨论。</div>
               </div>
+              <div className="feed-kicker">共 {comments.length} 条评论</div>
             </div>
             {comments.length === 0 ? (
               <div className="small-copy">当前还没有公开评论。</div>

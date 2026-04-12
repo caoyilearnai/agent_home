@@ -72,22 +72,47 @@ function PaginationBar({ pagination, onChange }) {
   );
 }
 
-function PostCard({ post, active, onSelect, onOpenAgent }) {
+function FeedSkeletonCard() {
   return (
-    <article className={`post-card ${active ? 'active' : ''}`} onClick={() => onSelect(post.id)}>
-      <div className="post-meta">
-        <span className="tag" style={{ background: `${post.category.accentColor}22`, color: post.category.accentColor }}>
-          {post.category.name}
-        </span>
-        <span
-          className="post-agent-link"
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenAgent(post.agent.id);
-          }}
-        >
-          @{post.agent.handle}
-        </span>
+    <article className="post-card post-card-skeleton" aria-hidden="true">
+      <div className="skeleton-line skeleton-meta-line" />
+      <div className="skeleton-line skeleton-title-line" />
+      <div className="skeleton-line skeleton-title-line short" />
+      <div className="skeleton-line skeleton-body-line" />
+      <div className="skeleton-line skeleton-body-line short" />
+      <div className="skeleton-line skeleton-meta-line short" />
+    </article>
+  );
+}
+
+function PostCard({ post, active, recentlyViewed, onSelect, onOpenAgent }) {
+  return (
+    <article
+      className={`post-card ${active ? 'active' : ''} ${recentlyViewed ? 'recently-viewed' : ''}`.trim()}
+      onClick={() => onSelect(post.id)}
+    >
+      <div className="post-card-top">
+        <div className="post-meta">
+          <span className="tag" style={{ background: `${post.category.accentColor}22`, color: post.category.accentColor }}>
+            {post.category.name}
+          </span>
+          {recentlyViewed ? <span className="feed-kicker post-card-kicker">刚刚浏览</span> : null}
+        </div>
+        <div className="post-meta post-meta-compact">
+          <span
+            className="post-agent-link"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenAgent(post.agent.id);
+            }}
+          >
+            @{post.agent.handle}
+          </span>
+          <span>{formatDate(post.createdAt)}</span>
+        </div>
+      </div>
+      <h3>{post.title}</h3>
+      <div className="post-submeta">
         <span
           className="post-agent-link"
           onClick={(e) => {
@@ -97,16 +122,16 @@ function PostCard({ post, active, onSelect, onOpenAgent }) {
         >
           {post.agent.displayName}
         </span>
-        <span>{formatDate(post.createdAt)}</span>
+        <span className="post-submeta-separator">·</span>
+        <span>{post.commentCount} 条评论正在展开</span>
       </div>
-      <h3>{post.title}</h3>
       <p className="post-excerpt">
         {markdownToExcerpt(post.body)}
       </p>
-      <div className="post-meta">
-        <span>{post.commentCount} 条评论</span>
-        <span>{post.likeCount} 次点赞</span>
-        <span>热度 {post.hotScore.toFixed(1)}</span>
+      <div className="post-card-footer">
+        <span className="post-stat-pill">评论 {post.commentCount}</span>
+        <span className="post-stat-pill">点赞 {post.likeCount}</span>
+        <span className="post-stat-pill">热度 {post.hotScore.toFixed(1)}</span>
       </div>
     </article>
   );
@@ -116,8 +141,14 @@ export default function FeedColumn({
   posts,
   sort,
   pagination,
+  selectedCategoryName,
+  todayCount,
   searchDraft,
   searchQuery,
+  isBootstrapping = false,
+  isRefreshing = false,
+  refreshLabel = '正在刷新内容',
+  recentlyViewedPostId = null,
   onSortChange,
   onPageChange,
   onSearchDraftChange,
@@ -138,9 +169,17 @@ export default function FeedColumn({
         <div className="feed-toolbar">
           <div>
             <div className="section-title">实时内容流</div>
-            <div className="small-copy">支持搜索帖子标题、正文和 Agent 名称</div>
+            <div className="small-copy">主界面以内容优先，支持搜索帖子标题、正文和 Agent 名称。</div>
+            <div className="feed-summary">
+              <span className="feed-kicker">当前分类 · {selectedCategoryName}</span>
+              <span className="feed-kicker">今日帖子 · {todayCount.posts}</span>
+              {searchQuery ? <span className="feed-kicker">搜索中 · {searchQuery}</span> : null}
+            </div>
           </div>
-          <SortToggle sort={sort} onChange={onSortChange} />
+          <div className="feed-toolbar-side">
+            {isRefreshing ? <div className="feed-refresh-indicator">{refreshLabel}</div> : null}
+            <SortToggle sort={sort} onChange={onSortChange} />
+          </div>
         </div>
         <form className="feed-search-bar" onSubmit={onSearchSubmit}>
           <input
@@ -159,8 +198,10 @@ export default function FeedColumn({
             </button>
           ) : null}
         </form>
-        <div className="post-list">
-          {posts.length === 0 ? (
+        <div className={`post-list ${isRefreshing ? 'refreshing' : ''}`.trim()}>
+          {isBootstrapping && posts.length === 0 ? (
+            Array.from({ length: 4 }).map((_, index) => <FeedSkeletonCard key={index} />)
+          ) : posts.length === 0 ? (
             <div className="empty-state">当前筛选条件下还没有帖子。</div>
           ) : (
             posts.map((post) => (
@@ -168,6 +209,7 @@ export default function FeedColumn({
                 key={post.id}
                 post={post}
                 active={selectedPostId === post.id}
+                recentlyViewed={recentlyViewedPostId === post.id}
                 onSelect={onSelectPost}
                 onOpenAgent={onOpenAgent}
               />

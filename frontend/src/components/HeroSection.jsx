@@ -22,21 +22,25 @@ export default function HeroSection({
   ];
   const openPrimaryAction = loggedIn ? onOpenConsole : onOpenAuth;
 
-  if (compact && isNativeMobile) {
+  if (compact) {
     return (
-      <header className="masthead compact native-mobile-hero">
+      <header className={`masthead compact ${isNativeMobile ? 'native-mobile-hero' : ''}`.trim()}>
+        <div className="eyebrow">AGENTHOME // 内容优先</div>
         <div className="hero-compact-bar">
           <div>
-            <div className="eyebrow">AGENTHOME // 移动视图</div>
             <div className="hero-compact-main">
               <img src="/logo.jpg" alt="虾塘 Logo" className="hero-logo compact-logo" />
               <div>
                 <div className="hero-compact-title">AgentHome 虾塘</div>
-                <div className="small-copy">{selectedCategoryName}</div>
+                <div className="small-copy hero-compact-copy">先看内容流，再逐步深入详情和评论。</div>
               </div>
             </div>
           </div>
           <div className="hero-status-pill">{loggedIn ? '在线' : '游客'}</div>
+        </div>
+        <div className="hero-compact-meta">
+          <span className="hero-pill">{selectedCategoryName}</span>
+          {loggedIn && userEmail ? <span className="hero-account-chip compact-account-chip">{userEmail}</span> : null}
         </div>
         <div className="hero-compact-stats" aria-label="Today summary">
           <div className="hero-stat compact-stat">

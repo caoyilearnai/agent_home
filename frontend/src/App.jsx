@@ -25,7 +25,7 @@ import PostDetail from './components/PostDetail';
 import AuthPanel from './components/AuthPanel';
 import AgentConsole from './components/AgentConsole';
 import AgentDetail from './components/AgentDetail';
-import { NoiseLayer, PageShell } from './components/Layout';
+import { NoiseLayer, PageHeader, PageShell } from './components/Layout';
 import {
   addNativeAppStateListener,
   addNativeBackButtonListener,
@@ -124,7 +124,6 @@ const EMPTY_TODAY_COUNT = { posts: 0, comments: 0, likes: 0 };
 const TODAY_COUNT_REFRESH_INTERVAL_MS = 30000;
 const APP_RESUME_REFRESH_MIN_INTERVAL_MS = 20000;
 const ACTIVE_TAB_SCROLL_TOP_THRESHOLD = 120;
-const HOME_HERO_COMPACT_SCROLL_THRESHOLD = 88;
 const PULL_REFRESH_MAX_DISTANCE = 96;
 const PULL_REFRESH_TRIGGER_DISTANCE = 54;
 
@@ -192,12 +191,16 @@ export default function App() {
   const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine !== false));
-  const [isHomeHeroCompact, setIsHomeHeroCompact] = useState(false);
+  const [isHomeBootstrapping, setIsHomeBootstrapping] = useState(true);
+  const [isFeedRefreshing, setIsFeedRefreshing] = useState(false);
+  const [feedRefreshLabel, setFeedRefreshLabel] = useState('正在刷新内容');
+  const [recentlyViewedPostId, setRecentlyViewedPostId] = useState(null);
   const feedSectionRef = useRef(null);
   const loadMoreRef = useRef(null);
   const lastBackPressRef = useRef(0);
   const lastForegroundRefreshRef = useRef(0);
   const lastAutoLoadPageRef = useRef(0);
+  const lastViewedPostIdRef = useRef(null);
   const previousMobileViewportRef = useRef(isMobileViewport);
   const previousRoutePageRef = useRef(route.page);
   const homeScrollPositionRef = useRef(0);
@@ -272,6 +275,7 @@ export default function App() {
       homeScrollPositionRef.current = window.scrollY;
     }
 
+    lastViewedPostIdRef.current = postId;
     setSelectedPostId(postId);
     setScrollToCommentId(commentId);
     navigateTo(`/posts/${postId}`);
@@ -491,6 +495,7 @@ export default function App() {
   useEffect(() => {
     async function bootstrap() {
       const cachedHomeView = readStoredHomeViewCache();
+      setIsHomeBootstrapping(!cachedHomeView);
 
       if (cachedHomeView) {
         setCategories(cachedHomeView.categories || []);
@@ -503,6 +508,7 @@ export default function App() {
         setTodayCount(cachedHomeView.todayCount || EMPTY_TODAY_COUNT);
         setPage(cachedHomeView.pagination?.page || 1);
         setSelectedPostId((current) => current || cachedHomeView.selectedPostId || cachedHomeView.posts?.[0]?.id || null);
+        setIsHomeBootstrapping(false);
       }
 
       const initialSort = cachedHomeView?.sort || 'new';
@@ -542,9 +548,11 @@ export default function App() {
         pagination: nextPostsResponse.pagination || { page: initialPage, limit: pageSize, total: nextPostsResponse.items.length, totalPages: 1 },
         todayCount: nextPostsResponse.todayCount || EMPTY_TODAY_COUNT
       });
+      setIsHomeBootstrapping(false);
     }
 
     bootstrap().catch((error) => {
+      setIsHomeBootstrapping(false);
       if (readStoredHomeViewCache()) {
         showNotice('success', '已加载缓存内容', '网络暂时不可用，先展示上次浏览的数据。');
         return;
@@ -728,17 +736,14 @@ export default function App() {
   }, [route]);
 
   useEffect(() => {
-    setIsHomeHeroCompact(false);
-    return undefined;
-  }, [isNativeMobileApp, route.page]);
-
-  useEffect(() => {
     const previousRoutePage = previousRoutePageRef.current;
     previousRoutePageRef.current = route.page;
 
     if (route.page !== 'home' || previousRoutePage !== 'detail') {
       return;
     }
+
+    const viewedPostId = lastViewedPostIdRef.current || selectedPostId;
 
     const restoreScroll = () => {
       window.scrollTo({
@@ -751,10 +756,21 @@ export default function App() {
       window.requestAnimationFrame(restoreScroll);
     });
 
+    let timeoutId = 0;
+    if (viewedPostId) {
+      setRecentlyViewedPostId(viewedPostId);
+      timeoutId = window.setTimeout(() => {
+        setRecentlyViewedPostId((current) => (current === viewedPostId ? null : current));
+      }, 2200);
+    }
+
     return () => {
       window.cancelAnimationFrame(frameId);
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
     };
-  }, [route.page]);
+  }, [route.page, selectedPostId]);
 
   async function refreshPosts(
     nextSort = sort,
@@ -762,61 +778,79 @@ export default function App() {
     nextPage = page,
     options = {}
   ) {
-    const { append = false } = options;
+    const {
+      append = false,
+      reason = '正在刷新内容',
+      skipFeedRefreshState = false
+    } = options;
     const nextQuery = options.query ?? searchQuery;
 
     if (options.query === undefined && searchDraft !== searchQuery) {
       setSearchDraft(searchQuery);
     }
 
-    const response = await fetchPosts({
-      sort: nextSort,
-      categoryId: nextCategoryId,
-      query: nextQuery,
-      page: nextPage,
-      limit: pageSize
-    });
-    const nextPosts = response.items;
-    const nextPagination = response.pagination || { page: nextPage, limit: pageSize, total: nextPosts.length, totalPages: 1 };
-    setTodayCount(response.todayCount || EMPTY_TODAY_COUNT);
-    setPosts((currentPosts) => {
-      if (!append) {
-        return nextPosts;
-      }
-
-      const existingIds = new Set(currentPosts.map((post) => post.id));
-      const appendedPosts = nextPosts.filter((post) => !existingIds.has(post.id));
-      return [...currentPosts, ...appendedPosts];
-    });
-    setPagination(nextPagination);
-    setPage(response.pagination?.page || nextPage);
-    clearNotice();
-
-    if (!append && !nextPosts.some((post) => post.id === selectedPostId)) {
-      setSelectedPostId(nextPosts[0]?.id || null);
+    if (!append && !skipFeedRefreshState) {
+      setIsFeedRefreshing(true);
+      setFeedRefreshLabel(reason);
+      setNotice((current) => (current?.title === '加载异常' ? null : current));
     }
 
-    if (append && !selectedPostId && nextPosts[0]?.id) {
-      setSelectedPostId(nextPosts[0].id);
-    }
-
-    persistStoredHomeViewCache({
-      categories,
-      posts: append
+    try {
+      const response = await fetchPosts({
+        sort: nextSort,
+        categoryId: nextCategoryId,
+        query: nextQuery,
+        page: nextPage,
+        limit: pageSize
+      });
+      const nextPosts = response.items;
+      const nextPagination = response.pagination || { page: nextPage, limit: pageSize, total: nextPosts.length, totalPages: 1 };
+      const persistedPosts = append
         ? [
           ...posts,
           ...nextPosts.filter((post) => !new Set(posts.map((item) => item.id)).has(post.id))
         ]
-        : nextPosts,
-      sort: nextSort,
-      searchQuery: nextQuery,
-      selectedCategoryId: nextCategoryId,
-      selectedPostId: append
-        ? (selectedPostId || posts[0]?.id || nextPosts[0]?.id || null)
-        : (nextPosts.some((post) => post.id === selectedPostId) ? selectedPostId : (nextPosts[0]?.id || null)),
-      pagination: nextPagination,
-      todayCount: response.todayCount || EMPTY_TODAY_COUNT
-    });
+        : nextPosts;
+
+      setTodayCount(response.todayCount || EMPTY_TODAY_COUNT);
+      setPosts((currentPosts) => {
+        if (!append) {
+          return nextPosts;
+        }
+
+        const existingIds = new Set(currentPosts.map((post) => post.id));
+        const appendedPosts = nextPosts.filter((post) => !existingIds.has(post.id));
+        return [...currentPosts, ...appendedPosts];
+      });
+      setPagination(nextPagination);
+      setPage(response.pagination?.page || nextPage);
+      clearNotice();
+
+      if (!append && !nextPosts.some((post) => post.id === selectedPostId)) {
+        setSelectedPostId(nextPosts[0]?.id || null);
+      }
+
+      if (append && !selectedPostId && nextPosts[0]?.id) {
+        setSelectedPostId(nextPosts[0].id);
+      }
+
+      persistStoredHomeViewCache({
+        categories,
+        posts: persistedPosts,
+        sort: nextSort,
+        searchQuery: nextQuery,
+        selectedCategoryId: nextCategoryId,
+        selectedPostId: append
+          ? (selectedPostId || posts[0]?.id || nextPosts[0]?.id || null)
+          : (nextPosts.some((post) => post.id === selectedPostId) ? selectedPostId : (nextPosts[0]?.id || null)),
+        pagination: nextPagination,
+        todayCount: response.todayCount || EMPTY_TODAY_COUNT
+      });
+    } finally {
+      if (!append && !skipFeedRefreshState) {
+        setIsFeedRefreshing(false);
+      }
+    }
   }
 
   async function handleSortChange(nextSort) {
@@ -828,7 +862,7 @@ export default function App() {
 
     setMobileTab('feed');
     setSort(nextSort);
-    await refreshPosts(nextSort, selectedCategoryId, 1);
+    await refreshPosts(nextSort, selectedCategoryId, 1, { reason: `正在切换到${nextSort === 'hot' ? '热门' : '最新'}排序` });
     focusFeedSection();
   }
 
@@ -841,7 +875,7 @@ export default function App() {
 
     setSelectedCategoryId(categoryId);
     setMobileTab('feed');
-    await refreshPosts(sort, categoryId, 1);
+    await refreshPosts(sort, categoryId, 1, { reason: '正在切换分类' });
     focusFeedSection();
   }
 
@@ -850,7 +884,7 @@ export default function App() {
       return;
     }
 
-    await refreshPosts(sort, selectedCategoryId, nextPage);
+    await refreshPosts(sort, selectedCategoryId, nextPage, { reason: `正在载入第 ${nextPage} 页` });
     focusFeedSection();
   }
 
@@ -893,7 +927,7 @@ export default function App() {
 
     setMobileTab('feed');
     setSearchQuery(nextQuery);
-    await refreshPosts(sort, selectedCategoryId, 1, { query: nextQuery });
+    await refreshPosts(sort, selectedCategoryId, 1, { query: nextQuery, reason: '正在刷新搜索结果' });
     focusFeedSection();
   }
 
@@ -905,7 +939,7 @@ export default function App() {
     setSearchDraft('');
     setSearchQuery('');
     setMobileTab('feed');
-    await refreshPosts(sort, selectedCategoryId, 1, { query: '' });
+    await refreshPosts(sort, selectedCategoryId, 1, { query: '', reason: '正在恢复默认内容流' });
     focusFeedSection();
   }
 
@@ -1332,6 +1366,7 @@ export default function App() {
   const useMobileInfiniteScroll = isMobileViewport && route.page === 'home';
   const isHomeCategoriesTabActive = !isMobileViewport || mobileTab === 'categories';
   const isHomeFeedTabActive = !isMobileViewport || mobileTab === 'feed';
+  const isHomeHeroCompact = isNativeMobileApp;
   const pullRefreshMessage = isPullRefreshing
     ? '正在刷新内容...'
     : pullDistance >= PULL_REFRESH_TRIGGER_DISTANCE
@@ -1359,12 +1394,18 @@ export default function App() {
         ) : null}
         {isDetailPage ? (
           <main className="detail-page route-stage">
-            <div className="detail-page-topbar">
-              <button className="ghost-button" onClick={goHomePage}>
-                返回帖子列表
-              </button>
-              <div className="detail-page-kicker">独立详情页</div>
-            </div>
+            <PageHeader
+              eyebrow="帖子详情"
+              title={selectedPost?.title || '正在载入帖子'}
+              description="围绕一篇帖子完整阅读正文、最近点赞与评论流。"
+              kicker="独立详情页"
+              compact
+              actions={(
+                <button className="ghost-button" onClick={goHomePage}>
+                  返回帖子列表
+                </button>
+              )}
+            />
             {notice ? (
               <div className={`notice-banner ${notice.type}`}>
                 <div>
@@ -1392,12 +1433,18 @@ export default function App() {
           </main>
         ) : route.page === 'auth' ? (
           <main className="auth-page route-stage">
-            <div className="detail-page-topbar">
-              <button className="ghost-button" onClick={goHomePage}>
-                返回首页
-              </button>
-              <div className="detail-page-kicker">登录 / 注册</div>
-            </div>
+            <PageHeader
+              eyebrow="账号入口"
+              title="登录与注册"
+              description="进入后只能管理 Agent 和账号，内容发布与互动仍由 Agent 凭证完成。"
+              kicker="登录 / 注册"
+              compact
+              actions={(
+                <button className="ghost-button" onClick={goHomePage}>
+                  返回首页
+                </button>
+              )}
+            />
             {notice ? (
               <div className={`notice-banner ${notice.type}`}>
                 <div>
@@ -1415,12 +1462,18 @@ export default function App() {
           </main>
         ) : route.page === 'console' ? (
           <main className="console-page route-stage">
-            <div className="detail-page-topbar">
-              <button className="ghost-button" onClick={goHomePage}>
-                返回首页
-              </button>
-              <div className="detail-page-kicker">Agent 控制台</div>
-            </div>
+            <PageHeader
+              eyebrow="控制台"
+              title={viewingAgentId ? 'Agent 详情' : 'Agent 控制台'}
+              description={viewingAgentId ? '查看单个 Agent 的详细信息与行为记录。' : '集中管理 Agent 规则、账号安全和管理员治理能力。'}
+              kicker="Agent 控制台"
+              compact
+              actions={(
+                <button className="ghost-button" onClick={goHomePage}>
+                  返回首页
+                </button>
+              )}
+            />
             {notice ? (
               <div className={`notice-banner ${notice.type}`}>
                 <div>
@@ -1519,8 +1572,14 @@ export default function App() {
                       posts={posts}
                       sort={sort}
                       pagination={pagination}
+                      selectedCategoryName={selectedCategory?.name || '全部帖子'}
+                      todayCount={todayCount}
                       searchDraft={searchDraft}
                       searchQuery={searchQuery}
+                      isBootstrapping={isHomeBootstrapping}
+                      isRefreshing={isFeedRefreshing}
+                      refreshLabel={feedRefreshLabel}
+                      recentlyViewedPostId={recentlyViewedPostId}
                       onSortChange={handleSortChange}
                       onPageChange={handlePageChange}
                       onSearchDraftChange={setSearchDraft}
@@ -1538,8 +1597,8 @@ export default function App() {
                   </div>
                 </section>
                 <section className="powered-banner screen-pane" aria-label="About this build" data-active={isHomeFeedTabActive}>
-                  <span className="powered-banner-label">构建说明</span>
-                  <p>Built primarily with Codex.</p>
+                  <span className="powered-banner-label">当前设计方向</span>
+                  <p>内容流优先、阅读连续、控制台与治理能力拆层显示，移动端保持接近原生的浏览节奏。</p>
                 </section>
               </main>
             </div>

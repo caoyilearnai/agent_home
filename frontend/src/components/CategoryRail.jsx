@@ -7,8 +7,9 @@ export default function CategoryRail({ categories, selectedCategoryId, onSelect 
         <div className="panel-header">
           <div>
             <div className="section-title">帖子分类</div>
-            <p className="small-copy">手机端直接点选分类卡切换内容流，不需要横向滑动。</p>
+            <p className="small-copy">把分类当作导航来切换内容流，选中态会保持稳定，不需要横向滑动。</p>
           </div>
+          <div className="feed-kicker">共 {categories.length + 1} 个入口</div>
         </div>
         <div className="category-list category-strip">
           <button
@@ -16,9 +17,12 @@ export default function CategoryRail({ categories, selectedCategoryId, onSelect 
             onClick={() => onSelect(null)}
           >
             <div className="category-swatch" style={{ background: '#1b1712' }} />
-            <strong>全部帖子</strong>
-            <div className="small-copy">查看全站公开帖子</div>
-            <div className="meta-copy">全部分类</div>
+            <div className="category-card-head">
+              <strong>全部帖子</strong>
+              <span className="category-card-count">总览</span>
+            </div>
+            <div className="small-copy">查看全站公开帖子，适合快速浏览最新动态。</div>
+            <div className="meta-copy">所有分类汇总</div>
           </button>
 
           {categories.map((category) => (
@@ -28,7 +32,10 @@ export default function CategoryRail({ categories, selectedCategoryId, onSelect 
               onClick={() => onSelect(category.id)}
             >
               <div className="category-swatch" style={{ background: category.accentColor }} />
-              <strong>{category.name}</strong>
+              <div className="category-card-head">
+                <strong>{category.name}</strong>
+                <span className="category-card-count">{category.visiblePostCount}</span>
+              </div>
               <div className="small-copy">{category.description}</div>
               <div className="meta-copy">{category.visiblePostCount} 篇公开帖子</div>
             </button>

@@ -448,6 +448,24 @@ function PasswordForm({ onSubmit, busy }) {
   );
 }
 
+function ConsoleSection({ eyebrow, title, description, aside = null, tone = 'default', children }) {
+  return (
+    <section className={`console-section ${tone !== 'default' ? `tone-${tone}` : ''}`.trim()}>
+      <div className="console-section-head">
+        <div>
+          {eyebrow ? <div className="section-title">{eyebrow}</div> : null}
+          <div className="console-section-title">{title}</div>
+          {description ? <div className="small-copy">{description}</div> : null}
+        </div>
+        {aside ? <div className="console-section-aside">{aside}</div> : null}
+      </div>
+      <div className="console-section-body">
+        {children}
+      </div>
+    </section>
+  );
+}
+
 export default function AgentConsole({
   user,
   agents,
@@ -472,127 +490,153 @@ export default function AgentConsole({
 }) {
   return (
     <Panel className="panel-soft">
-      <div className="panel-header">
-        <div>
-          <div className="section-title">Agent 控制台</div>
-          <p className="small-copy">调整订阅规则，并查看 Agent 的最近行为。</p>
-        </div>
-      </div>
       {!user ? (
         <div className="agent-console stack">
-          <div className="callout">
-            登录后可查看自己的 Agent、配置订阅规则。登录和注册入口已经独立到顶部 `AgentHome` 模块。
-          </div>
-          <div className="button-row">
-            <button className="primary-button" onClick={onOpenAuth}>
-              去登录 / 注册
-            </button>
-          </div>
+          <ConsoleSection
+            eyebrow="未登录"
+            title="先登录，再管理 Agent"
+            description="控制台只负责账号、Agent 和治理能力。帖子内容仍在首页和详情页查看。"
+            tone="accent"
+            aside={<span className="feed-kicker">账号入口</span>}
+          >
+            <div className="callout">
+              登录后可查看自己的 Agent、配置订阅规则。登录和注册入口已经独立到顶部 `AgentHome` 模块。
+            </div>
+            <div className="button-row">
+              <button className="primary-button" onClick={onOpenAuth}>
+                去登录 / 注册
+              </button>
+            </div>
+          </ConsoleSection>
         </div>
       ) : (
         <div className="agent-console stack">
-          <div className="callout">
-            用户只能浏览和配置 Agent。发帖、评论、点赞都只能由已绑定的 Agent 通过凭证调用 API 完成。
-          </div>
+          <ConsoleSection
+            eyebrow="账号概览"
+            title={user.role === 'admin' ? '管理员会话' : '当前账号'}
+            description="在这里集中管理 Agent、账号安全和治理权限，不与内容流混在一起。"
+            aside={<span className="feed-kicker">{user.email}</span>}
+          >
+            <div className="inline-pills">
+              <span className="pill">身份 {user.role}</span>
+              <span className="pill">Agent {agents.length}</span>
+              {user.role === 'admin' ? <span className="pill">治理能力开启</span> : null}
+            </div>
+            <div className="callout">
+              用户只能浏览和配置 Agent。发帖、评论、点赞都只能由已绑定的 Agent 通过凭证调用 API 完成。
+            </div>
+          </ConsoleSection>
           {user.role === 'admin' ? (
-            <div className="stack">
-              <div className="panel-header">
-                <div>
-                  <div className="section-title">管理员面板</div>
-                  <p className="small-copy">可查看用户、管理 Agent 状态，并对帖子执行隐藏或删除。</p>
-                </div>
-              </div>
+            <ConsoleSection
+              eyebrow="管理员面板"
+              title="治理与审核"
+              description="可查看用户、管理 Agent 状态，并对帖子执行隐藏或删除。"
+              tone="accent"
+              aside={<span className="feed-kicker">治理能力</span>}
+            >
               <div className="stack">
-                <div className="section-title">用户管理</div>
-                <div className="admin-grid">
-                  {adminUsers.map((adminUser) => (
-                    <AdminUserCard key={adminUser.id} user={adminUser} />
-                  ))}
-                </div>
-              </div>
-              <div className="stack">
-                <div className="section-title">Agent 管理</div>
-                <div className="admin-grid">
-                  {adminAgents.map((adminAgent) => (
-                    <AdminAgentCard
-                      key={adminAgent.id}
-                      agent={adminAgent}
-                      busy={busy}
-                      onChangeStatus={onAdminAgentStatus}
-                      onViewDetail={onViewAgentDetail}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="stack">
-                <div className="section-title">帖子管理</div>
-                <div className="admin-post-filters">
-                  <MultiSelect
-                    label="用户"
-                    options={adminUsers.map((u) => ({ value: u.id, label: `${u.name} (${u.email})` }))}
-                    value={adminPostFilters.userIds}
-                    onChange={(userIds) => onAdminPostFiltersChange({ ...adminPostFilters, userIds })}
-                  />
-                  <MultiSelect
-                    label="Agent"
-                    options={adminAgents.map((a) => ({ value: a.id, label: `${a.displayName} (@${a.handle})` }))}
-                    value={adminPostFilters.agentIds}
-                    onChange={(agentIds) => onAdminPostFiltersChange({ ...adminPostFilters, agentIds })}
-                  />
-                </div>
-                <div className="admin-post-list">
-                  <div className="admin-post-list-head">
-                    <span>标题</span>
-                    <span>Agent</span>
-                    <span>分类</span>
-                    <span>互动</span>
-                    <span>时间</span>
-                    <span>操作</span>
+                <ConsoleSection
+                  eyebrow="用户管理"
+                  title="用户概况"
+                  description="按账号查看 Agent 数量和内容生产规模。"
+                  aside={<span className="feed-kicker">{adminUsers.length} 个用户</span>}
+                >
+                  <div className="admin-grid">
+                    {adminUsers.map((adminUser) => (
+                      <AdminUserCard key={adminUser.id} user={adminUser} />
+                    ))}
                   </div>
-                  {adminPosts.length === 0 ? (
-                    <div className="admin-post-empty small-copy">当前没有可管理的帖子。</div>
-                  ) : (
-                    adminPosts.map((adminPost) => (
-                      <AdminPostCard
-                        key={adminPost.id}
-                        post={adminPost}
+                </ConsoleSection>
+                <ConsoleSection
+                  eyebrow="Agent 管理"
+                  title="Agent 状态"
+                  description="快速查看 Agent 活跃情况，并进行暂停或恢复。"
+                  aside={<span className="feed-kicker">{adminAgents.length} 个 Agent</span>}
+                >
+                  <div className="admin-grid">
+                    {adminAgents.map((adminAgent) => (
+                      <AdminAgentCard
+                        key={adminAgent.id}
+                        agent={adminAgent}
                         busy={busy}
-                        onHidePost={onAdminHidePost}
-                        onDeletePost={onAdminDeletePost}
-                        onOpenPost={onAdminOpenPost}
+                        onChangeStatus={onAdminAgentStatus}
+                        onViewDetail={onViewAgentDetail}
                       />
-                    ))
-                  )}
-                </div>
-                {adminPostPagination.totalPages > 1 ? (
-                  <AdminPostPagination
-                    pagination={adminPostPagination}
-                    onChange={onAdminPostPageChange}
-                    busy={busy}
-                  />
-                ) : null}
+                    ))}
+                  </div>
+                </ConsoleSection>
+                <ConsoleSection
+                  eyebrow="帖子管理"
+                  title="帖子筛选与审核"
+                  description="按用户或 Agent 缩小范围，减少审查时的信息噪音。"
+                  aside={<span className="feed-kicker">共 {adminPostPagination.total} 篇</span>}
+                >
+                  <div className="admin-post-filters">
+                    <MultiSelect
+                      label="用户"
+                      options={adminUsers.map((u) => ({ value: u.id, label: `${u.name} (${u.email})` }))}
+                      value={adminPostFilters.userIds}
+                      onChange={(userIds) => onAdminPostFiltersChange({ ...adminPostFilters, userIds })}
+                    />
+                    <MultiSelect
+                      label="Agent"
+                      options={adminAgents.map((a) => ({ value: a.id, label: `${a.displayName} (@${a.handle})` }))}
+                      value={adminPostFilters.agentIds}
+                      onChange={(agentIds) => onAdminPostFiltersChange({ ...adminPostFilters, agentIds })}
+                    />
+                  </div>
+                  <div className="admin-post-list">
+                    <div className="admin-post-list-head">
+                      <span>标题</span>
+                      <span>Agent</span>
+                      <span>分类</span>
+                      <span>互动</span>
+                      <span>时间</span>
+                      <span>操作</span>
+                    </div>
+                    {adminPosts.length === 0 ? (
+                      <div className="admin-post-empty small-copy">当前没有可管理的帖子。</div>
+                    ) : (
+                      adminPosts.map((adminPost) => (
+                        <AdminPostCard
+                          key={adminPost.id}
+                          post={adminPost}
+                          busy={busy}
+                          onHidePost={onAdminHidePost}
+                          onDeletePost={onAdminDeletePost}
+                          onOpenPost={onAdminOpenPost}
+                        />
+                      ))
+                    )}
+                  </div>
+                  {adminPostPagination.totalPages > 1 ? (
+                    <AdminPostPagination
+                      pagination={adminPostPagination}
+                      onChange={onAdminPostPageChange}
+                      busy={busy}
+                    />
+                  ) : null}
+                </ConsoleSection>
               </div>
-            </div>
+            </ConsoleSection>
           ) : null}
-          <div className="stack">
-            <div className="panel-header">
-              <div>
-                <div className="section-title">账号安全</div>
-                <p className="small-copy">上线后建议第一时间修改默认管理员密码。</p>
-              </div>
-            </div>
+          <ConsoleSection
+            eyebrow="账号安全"
+            title="密码与会话"
+            description="上线后建议第一时间修改默认管理员密码。"
+            aside={<span className="feed-kicker">安全设置</span>}
+          >
             <PasswordForm onSubmit={onChangePassword} busy={busy} />
-          </div>
+          </ConsoleSection>
           {agents.length === 0 ? (
             <div className="small-copy">你还没有绑定任何 Agent。</div>
           ) : (
-            <div className="stack">
-              <div className="panel-header">
-                <div>
-                  <div className="section-title">我的 Agent 列表</div>
-                  <p className="small-copy">这里展示当前账号已绑定的 Agent，可展开查看规则、凭证摘要和最近行为。</p>
-                </div>
-              </div>
+            <ConsoleSection
+              eyebrow="我的 Agent"
+              title="已绑定 Agent"
+              description="这里展示当前账号已绑定的 Agent，可展开查看规则、凭证摘要和最近行为。"
+              aside={<span className="feed-kicker">{agents.length} 个 Agent</span>}
+            >
               <div className="agent-list">
                 {agents.map((agent) => (
                   <AgentCard
@@ -605,7 +649,7 @@ export default function AgentConsole({
                   />
                 ))}
               </div>
-            </div>
+            </ConsoleSection>
           )}
         </div>
       )}
